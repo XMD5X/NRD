@@ -1,28 +1,35 @@
-/* Фирменные цвета СИБУР.
-   --sibur-teal — официальный зелёный бренда (#55b4c7, см. github.com/sibur-holding/logo).
-   Остальные — тёмно-зелёный / мятный / ярко-оранжевый по описанию актуальной
-   палитры бренда (guide.sibur.ru/materials: "основные цвета — ДНК СИБУР,
-   тёмно-зелёный, мятный и белый; акцентный — ярко-оранжевый"). Точные HEX этих
-   оттенков не публикуются в открытом брендбуке — при наличии PDF-гайдлайна
-   значения ниже можно уточнить. */
+/* Фирменные цвета и типографика СИБУР — по официальному брендбуку
+   "Рекомендации по использованию элементов фирменного стиля" (Версия 1.0).
+   Основные цвета: SIBUR DNA, Dark Teal, Mint, White (соотношение ~20/20/20/35%).
+   Акцентный цвет: Bright Orange — используется точечно (~5%), для выделения
+   важной информации и ключевых действий, не как основной цвет интерфейса.
+   Корпоративный шрифт — Roboto (Light/Regular/Bold); при технической
+   невозможности использовать Roboto — системный Arial (см. п. 2.5 Типографика). */
 :root {
-  --sibur-teal: #55b4c7;
-  --sibur-dark-green: #143a2f;
-  --sibur-dark-green-2: #0d2a22;
-  --sibur-mint: #b7e4d8;
-  --sibur-orange: #f4741e;
+  --sibur-dna: #008C95;      /* SIBUR DNA — основной бирюзовый, идентичность */
+  --sibur-dark-teal: #00313C; /* Dark Teal — прогресс и инновации */
+  --sibur-dark-teal-2: #001c22; /* затемнённый Dark Teal для hover/градиентов */
+  --sibur-mint: #77E2C3;     /* Mint — устойчивое развитие */
+  --sibur-orange: #E04E39;   /* Bright Orange — акцентный цвет */
+  --sibur-white: #FFFFFF;
+
+  /* устаревшие имена — оставлены как алиасы, чтобы не ломать возможные
+     внешние ссылки/скрипты, использующие старые названия переменных */
+  --sibur-teal: var(--sibur-dna);
+  --sibur-dark-green: var(--sibur-dark-teal);
+  --sibur-dark-green-2: var(--sibur-dark-teal-2);
 }
 
 * { box-sizing: border-box; }
 body {
   margin: 0;
-  font-family: Roboto, -apple-system, Segoe UI, Helvetica, Arial, sans-serif;
+  font-family: 'Roboto', -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
   background: #f4f5f7;
   color: #1f2430;
 }
 .layout { min-height: 100vh; display: flex; flex-direction: column; }
 .topbar {
-  background: linear-gradient(135deg, var(--sibur-dark-green) 0%, var(--sibur-dark-green-2) 100%);
+  background: linear-gradient(135deg, var(--sibur-dark-teal) 0%, var(--sibur-dark-teal-2) 100%);
   color: white;
   padding: 12px 24px;
   display: flex;
@@ -30,7 +37,7 @@ body {
   align-items: center;
 }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
-.brand-name { letter-spacing: 0.5px; }
+.brand-name { letter-spacing: 0.5px; text-transform: uppercase; }
 .brand-sub { font-weight: 400; font-size: 13px; color: var(--sibur-mint); }
 .nav { display: flex; align-items: center; gap: 16px; }
 .nav a { color: var(--sibur-mint); text-decoration: none; }
@@ -38,40 +45,42 @@ body {
 .user-chip { background: rgba(255,255,255,0.12); padding: 4px 10px; border-radius: 12px; font-size: 13px; }
 .nav button {
   background: var(--sibur-orange); color: white; border: none; padding: 6px 12px;
-  border-radius: 6px; cursor: pointer;
+  border-radius: 6px; cursor: pointer; font-weight: 500;
 }
+.nav button:hover { background: #c73f2c; }
 .content { padding: 24px; max-width: 960px; margin: 0 auto; width: 100%; }
 .card {
   background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  border-top: 3px solid var(--sibur-teal);
+  border-top: 3px solid var(--sibur-dna);
 }
 .centered-form { display: flex; justify-content: center; align-items: center; min-height: 100vh; }
 label { display: block; margin-bottom: 12px; font-size: 14px; font-weight: 500; }
 input, select, textarea {
   display: block; width: 100%; padding: 8px 10px; margin-top: 4px;
   border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;
+  font-family: inherit;
 }
 input:focus, select:focus, textarea:focus {
-  outline: none; border-color: var(--sibur-teal); box-shadow: 0 0 0 2px rgba(85,180,199,0.25);
+  outline: none; border-color: var(--sibur-dna); box-shadow: 0 0 0 2px rgba(0,140,149,0.2);
 }
 textarea { min-height: 70px; font-family: monospace; }
 button {
-  background: var(--sibur-dark-green); color: white; border: none; padding: 8px 16px;
-  border-radius: 6px; cursor: pointer; font-size: 14px;
+  background: var(--sibur-dark-teal); color: white; border: none; padding: 8px 16px;
+  border-radius: 6px; cursor: pointer; font-size: 14px; font-family: inherit;
 }
-button:hover:not(:disabled) { background: var(--sibur-dark-green-2); }
+button:hover:not(:disabled) { background: var(--sibur-dark-teal-2); }
 button:disabled { opacity: 0.6; cursor: not-allowed; }
 .error { color: #dc2626; margin-bottom: 12px; }
 .hint { color: #6b7280; font-size: 13px; }
 .table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; }
 .table th, .table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
-.table th { background: #f0f7f6; color: var(--sibur-dark-green); }
+.table th { background: #e6f5f5; color: var(--sibur-dark-teal); font-weight: 700; }
 .actions { display: flex; gap: 8px; }
 .status-box { margin-top: 16px; padding: 12px; border-radius: 8px; background: #f3f4f6; }
-.status-generated { background: #eafbf4; }
+.status-generated { background: #e7faf2; }
 .status-failed { background: #fef2f2; }
 .status-sent { background: #eff6ff; }
-.log-output { background: #111827; color: #f87171; padding: 10px; border-radius: 6px; overflow-x: auto; font-size: 12px; }
-.badge { padding: 4px 10px; border-radius: 12px; font-size: 13px; }
-.badge-success { background: var(--sibur-mint); color: var(--sibur-dark-green); }
+.log-output { background: var(--sibur-dark-teal); color: var(--sibur-mint); padding: 10px; border-radius: 6px; overflow-x: auto; font-size: 12px; }
+.badge { padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 500; }
+.badge-success { background: var(--sibur-mint); color: var(--sibur-dark-teal); }

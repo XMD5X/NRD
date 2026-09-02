@@ -31,7 +31,7 @@ export default function LoginPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
           <SiburLogo size={36} />
           <div>
-            <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--sibur-dark-green)' }}>SIBUR</div>
+            <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--sibur-dark-teal)' }}>SIBUR</div>
             <div className="hint" style={{ marginTop: -2 }}>Админ-панель поддержки</div>
           </div>
         </div>
