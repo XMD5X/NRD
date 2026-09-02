@@ -28,12 +28,9 @@ export default function LoginPage() {
   return (
     <div className="centered-form">
       <form className="card" onSubmit={handleSubmit}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-          <SiburLogo size={36} />
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--sibur-dark-teal)' }}>SIBUR</div>
-            <div className="hint" style={{ marginTop: -2 }}>Админ-панель поддержки</div>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+          <SiburLogo height={30} />
+          <div className="hint" style={{ marginTop: 2 }}>НРД - Бизнес панель</div>
         </div>
         <h1>Вход в систему</h1>
         <p className="hint">

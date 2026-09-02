@@ -16,12 +16,10 @@ export default function Layout({ children }) {
     <div className="layout">
       <header className="topbar">
         <div className="brand">
-          <SiburLogo />
-          <span>
-            <span className="brand-name">SIBUR</span>
-            <br />
-            <span className="brand-sub">Админ-панель поддержки</span>
+          <span className="brand-mark">
+            <SiburLogo height={22} />
           </span>
+          <span className="brand-sub">НРД - Бизнес панель</span>
         </div>
         {auth && (
           <nav className="nav">

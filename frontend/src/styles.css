@@ -36,8 +36,15 @@ body {
   justify-content: space-between;
   align-items: center;
 }
-.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
-.brand-name { letter-spacing: 0.5px; text-transform: uppercase; }
+.brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 18px; }
+.brand-mark {
+  background: var(--sibur-white);
+  padding: 6px 12px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  line-height: 0;
+}
 .brand-sub { font-weight: 400; font-size: 13px; color: var(--sibur-mint); }
 .nav { display: flex; align-items: center; gap: 16px; }
 .nav a { color: var(--sibur-mint); text-decoration: none; }
