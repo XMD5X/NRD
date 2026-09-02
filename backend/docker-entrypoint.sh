@@ -9,4 +9,13 @@
 # На пустом/новом томе chown отрабатывает мгновенно.
 set -e
 chown -R appuser:appuser /app/data
-exec su -s /bin/sh appuser -c 'exec java -jar /app/app.jar'
+
+# ВАЖНО: su (без -p) сбрасывает PATH для целевого пользователя на "безопасный"
+# дефолт, который НЕ включает каталог с java (eclipse-temurin добавляет его в
+# PATH через ENV в образе, у root это работает, а у appuser после su — уже нет:
+# "exec: java: not found"). Поэтому находим абсолютный путь к java здесь, пока
+# ещё root с правильным PATH, и запускаем su с -p (сохранить окружение) и явным
+# путём к бинарнику — тогда результат не зависит от того, как именно su
+# обходится с PATH.
+JAVA_BIN="$(command -v java)"
+exec su -p -s /bin/sh appuser -c "exec '$JAVA_BIN' -jar /app/app.jar"
