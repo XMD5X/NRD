@@ -145,3 +145,30 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 .batch-summary ul { margin: 8px 0 0; padding-left: 20px; }
 .batch-summary li { margin-bottom: 4px; }
 .batch-summary strong { color: var(--sibur-dark-teal); }
+
+
+/* Карточка "Системные ресурсы" (/admin/settings) */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+  margin-top: 12px;
+}
+.metric-tile {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+.metric-value { font-size: 18px; font-weight: 700; color: var(--sibur-dark-teal); margin-top: 2px; }
+
+/* Индикатор "онлайн" в списке пользователей (AdminUsersPage) */
+.online-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.online-dot-on { background: #22c55e; }
+.online-dot-off { background: #9ca3af; }

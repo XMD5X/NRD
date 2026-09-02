@@ -67,6 +67,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/scripts/execute-batch/template").authenticated()
                 .requestMatchers("/api/scripts/**").hasRole("ADMIN")
                 .requestMatchers("/api/system/log-level").authenticated()
+                // Метрики хоста и выгрузка логов (backend/frontend/журнал безопасности CEF) —
+                // только ADMIN: страница /admin/settings во фронтенде и так доступна только
+                // администратору (adminOnly в App.jsx), здесь та же граница на backend.
+                .requestMatchers("/api/system/metrics", "/api/system/logs/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

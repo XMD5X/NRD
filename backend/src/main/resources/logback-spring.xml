@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!--
+      По умолчанию Spring Boot логирует только в консоль (docker compose logs).
+      Для кнопки "Выгрузить логи backend" (/admin/settings) нужен ещё и файл на
+      диске, который backend сам может отдать по HTTP (см. SystemController).
+      Консольный вывод оставляем как есть — на него по-прежнему завязан
+      docker compose logs backend, которым мы уже пользовались при отладке.
+    -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <property name="CONSOLE_LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- app.backend-logs-dir из application.yml (см. AppProperties.backendLogsDir). -->
+    <springProperty scope="context" name="backendLogsDir" source="app.backend-logs-dir"
+                     defaultValue="./data/logs/backend"/>
+
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${backendLogsDir}/backend.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${backendLogsDir}/backend-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <!-- Разумный потолок на файл + общее хранение 14 дней, чтобы логи
+                 backend не росли неограниченно (см. аудит безопасности — тот же
+                 принцип, что уже применён к логам фронтенда: MAX_ENTRIES_PER_BATCH
+                 в FrontendLogService). -->
+            <maxFileSize>20MB</maxFileSize>
+            <maxHistory>14</maxHistory>
+            <totalSizeCap>500MB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+
+    <logger name="ru.support.adminpanel" level="INFO"/>
+</configuration>

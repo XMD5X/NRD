@@ -29,6 +29,7 @@ app:
   uploads-dir: ${APP_UPLOADS_DIR:./data/uploads}
   frontend-logs-dir: ${APP_FRONTEND_LOGS_DIR:./data/logs/frontend}
   frontend-logs-archive-dir: ${APP_FRONTEND_LOGS_ARCHIVE_DIR:./data/logs/frontend/archive}
+  backend-logs-dir: ${APP_BACKEND_LOGS_DIR:./data/logs/backend}
   jwt-secret: ${APP_JWT_SECRET:change-me-in-production-please-use-env-var-adminpanel-secret-key}
   jwt-expiration-minutes: ${APP_JWT_EXPIRATION_MINUTES:480}
   frontend-log-retention-days: ${APP_FRONTEND_LOG_RETENTION_DAYS:7}

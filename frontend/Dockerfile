@@ -26,4 +26,11 @@ COPY nginx/common-locations.conf /etc/nginx/common-locations.conf
 COPY nginx/generate-cert.sh /docker-entrypoint.d/40-generate-cert.sh
 RUN chmod +x /docker-entrypoint.d/40-generate-cert.sh
 
+# Тот же принцип (скрипты из /docker-entrypoint.d/ штатный entrypoint образа
+# nginx запускает сам, по алфавиту) — считает размер уже скопированной статики
+# при каждом старте контейнера и кладёт в /nginx-metrics.json (см. карточка
+# "Системные ресурсы" на /admin/settings, AdminSettingsPage.jsx).
+COPY nginx/generate-metrics.sh /docker-entrypoint.d/45-generate-metrics.sh
+RUN chmod +x /docker-entrypoint.d/45-generate-metrics.sh
+
 EXPOSE 80 443

@@ -25,6 +25,11 @@ public class AppProperties {
     /** Каталог для архива файловых логов фронтенда. */
     private String frontendLogsArchiveDir = "./data/logs/frontend/archive";
 
+    /** Каталог для файловых логов backend (см. logback-spring.xml) — используется
+     *  только для кнопки "Выгрузить логи backend" в /admin/settings, сама ротация
+     *  и уровень логирования настраиваются в logback-spring.xml, а не здесь. */
+    private String backendLogsDir = "./data/logs/backend";
+
     /** Секрет для подписи JWT. */
     private String jwtSecret = "change-me-in-production-please-use-env-var-adminpanel-secret-key";
 
@@ -48,6 +53,9 @@ public class AppProperties {
 
     public String getFrontendLogsArchiveDir() { return frontendLogsArchiveDir; }
     public void setFrontendLogsArchiveDir(String frontendLogsArchiveDir) { this.frontendLogsArchiveDir = frontendLogsArchiveDir; }
+
+    public String getBackendLogsDir() { return backendLogsDir; }
+    public void setBackendLogsDir(String backendLogsDir) { this.backendLogsDir = backendLogsDir; }
 
     public String getJwtSecret() { return jwtSecret; }
     public void setJwtSecret(String jwtSecret) { this.jwtSecret = jwtSecret; }

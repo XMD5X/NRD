@@ -2,6 +2,11 @@ import React, { useEffect, useState } from 'react'
 import client from '../api/client.js'
 import { logger } from '../logging/logger.js'
 
+// Пользователь считается "онлайн", если backend видел от него запрос за
+// последние 5 минут (см. OnlineUsersTracker на backend) — обновляем список
+// периодически, чтобы статус не "залипал" на весь визит на страницу.
+const REFRESH_INTERVAL_MS = 20000
+
 export default function AdminUsersPage() {
   const [users, setUsers] = useState([])
   const [newLogin, setNewLogin] = useState('')
@@ -14,7 +19,11 @@ export default function AdminUsersPage() {
     client.get('/users').then((res) => setUsers(res.data))
   }
 
-  useEffect(loadUsers, [])
+  useEffect(() => {
+    loadUsers()
+    const timer = setInterval(loadUsers, REFRESH_INTERVAL_MS)
+    return () => clearInterval(timer)
+  }, [])
 
   async function handleCreate(e) {
     e.preventDefault()
@@ -49,6 +58,8 @@ export default function AdminUsersPage() {
     setHistoryUserLogin(user.login)
   }
 
+  const onlineCount = users.filter((u) => u.online).length
+
   return (
     <div>
       <h1>Управление пользователями</h1>
@@ -69,7 +80,7 @@ export default function AdminUsersPage() {
 
       <table className="table">
         <thead>
-          <tr><th>Логин</th><th>Роль</th><th>Статус</th><th>Действия</th></tr>
+          <tr><th>Логин</th><th>Роль</th><th>Статус</th><th>Онлайн ({onlineCount} из {users.length})</th><th>Действия</th></tr>
         </thead>
         <tbody>
           {users.map((u) => (
@@ -77,6 +88,10 @@ export default function AdminUsersPage() {
               <td>{u.login}</td>
               <td>{u.role}</td>
               <td>{u.blocked ? `Заблокирован (${u.blockedReason || ''})` : 'Активен'}</td>
+              <td>
+                <span className={`online-dot ${u.online ? 'online-dot-on' : 'online-dot-off'}`} />
+                {u.online ? 'онлайн' : 'офлайн'}
+              </td>
               <td className="actions">
                 {u.blocked ? (
                   <button onClick={() => handleUnblock(u)}>Разблокировать</button>

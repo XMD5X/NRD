@@ -9,4 +9,7 @@ import java.util.UUID;
 public interface ActionHistoryRepository extends JpaRepository<ActionHistory, UUID> {
     List<ActionHistory> findByUserIdOrderByCreatedAtDesc(UUID userId);
     List<ActionHistory> findAllByOrderByCreatedAtDesc();
+
+    /** Для выгрузки журнала безопасности в формате CEF (см. CefAuditExportService). */
+    List<ActionHistory> findAllByOrderByCreatedAtAsc();
 }

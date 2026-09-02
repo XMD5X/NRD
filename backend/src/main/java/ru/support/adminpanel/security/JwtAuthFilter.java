@@ -12,6 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import ru.support.adminpanel.repository.UserRepository;
+import ru.support.adminpanel.service.OnlineUsersTracker;
 
 import java.io.IOException;
 import java.util.List;
@@ -22,10 +23,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserRepository userRepository;
+    private final OnlineUsersTracker onlineUsersTracker;
 
-    public JwtAuthFilter(JwtService jwtService, UserRepository userRepository) {
+    public JwtAuthFilter(JwtService jwtService, UserRepository userRepository, OnlineUsersTracker onlineUsersTracker) {
         this.jwtService = jwtService;
         this.userRepository = userRepository;
+        this.onlineUsersTracker = onlineUsersTracker;
     }
 
     @Override
@@ -55,6 +58,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
                     var authentication = new UsernamePasswordAuthenticationToken(principal, null, authorities);
                     SecurityContextHolder.getContext().setAuthentication(authentication);
+                    // "Онлайн" в списке пользователей (см. AdminUsersPage) — отметка
+                    // последнего успешно авторизованного запроса, живёт только в памяти.
+                    onlineUsersTracker.touch(UUID.fromString(userId));
                 } else {
                     SecurityContextHolder.clearContext();
                 }

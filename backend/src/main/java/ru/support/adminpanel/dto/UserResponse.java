@@ -13,8 +13,9 @@ public class UserResponse {
     private boolean blocked;
     private String blockedReason;
     private OffsetDateTime createdAt;
+    private boolean online;
 
-    public static UserResponse from(User u) {
+    public static UserResponse from(User u, boolean online) {
         UserResponse r = new UserResponse();
         r.id = u.getId();
         r.login = u.getLogin();
@@ -22,6 +23,7 @@ public class UserResponse {
         r.blocked = u.isBlocked();
         r.blockedReason = u.getBlockedReason();
         r.createdAt = u.getCreatedAt();
+        r.online = online;
         return r;
     }
 
@@ -31,4 +33,5 @@ public class UserResponse {
     public boolean isBlocked() { return blocked; }
     public String getBlockedReason() { return blockedReason; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
+    public boolean isOnline() { return online; }
 }

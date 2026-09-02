@@ -13,4 +13,7 @@ public interface LoginHistoryRepository extends JpaRepository<LoginHistory, UUID
     /** Для защиты от подбора пароля (см. AuthService) — считаем по строке логина,
      *  а не по userId, чтобы блокировать перебор и для несуществующих логинов тоже. */
     long countByLoginAttemptedIgnoreCaseAndSuccessFalseAndAttemptedAtAfter(String login, OffsetDateTime since);
+
+    /** Для выгрузки журнала безопасности в формате CEF (см. CefAuditExportService). */
+    List<LoginHistory> findAllByOrderByAttemptedAtAsc();
 }
