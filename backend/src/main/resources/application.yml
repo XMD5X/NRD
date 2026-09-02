@@ -32,11 +32,6 @@ app:
   jwt-secret: ${APP_JWT_SECRET:change-me-in-production-please-use-env-var-adminpanel-secret-key}
   jwt-expiration-minutes: ${APP_JWT_EXPIRATION_MINUTES:480}
   frontend-log-retention-days: ${APP_FRONTEND_LOG_RETENTION_DAYS:7}
-  # Список разрешённых origin для CORS через запятую (см. CorsConfig и аудит
-  # безопасности — раньше был "*" безусловно, даже в проде). В docker-compose
-  # не передаётся — используются дефолты (адреса Vite dev server), т.к. в
-  # контейнерах nginx проксирует /api с того же origin и CORS не нужен.
-  cors-allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
 
 management:
   endpoints:
