@@ -47,15 +47,20 @@ def main():
     # Параметры запуска (передаются панелью как позиционные аргументы командной строки,
     # без интерактивного ввода input() — панель запускает скрипт неинтерактивно и не
     # сможет ответить на приглашения ввода):
-    #   argv[1] — комментарии, через запятую
-    #   argv[2] — номера сертификатов ЭЦП, через запятую
-    #   argv[3] — даты истечения (ДД.ММ.ГГГГ), через запятую
-    # Значение №N в каждом списке образует одну ЭЦП -> один JSON-файл результата.
+    #   argv[1] — User ID (один, общий для всех ЭЦП в этом запуске — кому в целевой
+    #             системе адресованы формируемые пакеты регистрации сертификатов)
+    #   argv[2] — комментарии, через запятую
+    #   argv[3] — номера сертификатов ЭЦП, через запятую
+    #   argv[4] — даты истечения (ДД.ММ.ГГГГ), через запятую
+    # Значение №N в каждом из трёх списков (комментарии/номера/даты) образует одну ЭЦП ->
+    # один JSON-файл результата; User ID один и тот же для всех файлов одного запуска.
     # Результат сохраняется в текущую рабочую директорию (её задаёт панель под каждый запуск).
-    comments_raw = sys.argv[1] if len(sys.argv) > 1 else ""
-    numbers_raw = sys.argv[2] if len(sys.argv) > 2 else ""
-    dates_raw = sys.argv[3] if len(sys.argv) > 3 else ""
+    user_id_raw = sys.argv[1] if len(sys.argv) > 1 else ""
+    comments_raw = sys.argv[2] if len(sys.argv) > 2 else ""
+    numbers_raw = sys.argv[3] if len(sys.argv) > 3 else ""
+    dates_raw = sys.argv[4] if len(sys.argv) > 4 else ""
 
+    user_id = normalize_input(user_id_raw)
     comments = split_list(comments_raw)
     numbers_ecp = split_list(numbers_raw)
     exp_dates_ecp = split_list(dates_raw)
@@ -69,11 +74,18 @@ def main():
     if len(comments) != len(numbers_ecp) or len(numbers_ecp) != len(exp_dates_ecp):
         errors.append("Количество введённых комментариев, номеров сертификатов и дат истечения не совпадает!")
 
+    if not user_id:
+        errors.append("Не указан User ID — укажите, для какого пользователя формируются пакеты.")
+
     success_count = 0
     error_count = 0
 
+    # Без User ID не генерируем ни одного файла — пакеты без адресата в целевой системе
+    # смысла не имеют (см. проверку выше, ошибка уже добавлена в errors).
+    row_count = max(len(comments), len(numbers_ecp), len(exp_dates_ecp)) if user_id else 0
+
     # Создание и запись JSON-документов — по одному файлу на каждую ЭЦП
-    for i in range(max(len(comments), len(numbers_ecp), len(exp_dates_ecp))):
+    for i in range(row_count):
         try:
             comment = comments[i]
             number_ecp = numbers_ecp[i].upper()  # Преобразование номера сертификата в верхний регистр
@@ -84,6 +96,7 @@ def main():
 
             # Формирование JSON-данных
             json_body = {
+                "user_id": user_id,
                 "is_client": True,
                 "location": "CurrentUser",
                 "store": "My",
@@ -123,6 +136,7 @@ def main():
             print(f"{idx}) {err}")
 
     # Если не сгенерировано ни одного файла — считаем выполнение неуспешным
+    # (в т.ч. случай отсутствующего User ID, при котором генерация вообще не запускалась).
     if success_count == 0:
         sys.exit(1)
 

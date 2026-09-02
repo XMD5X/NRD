@@ -27,7 +27,9 @@ if %errorlevel% neq 0 (
 
 echo.
 echo Готово. Панель будет доступна через 20-30 секунд (пока backend стартует):
-echo   http://localhost:18080
+echo   http://localhost:18080  (обычный доступ)
+echo   https://localhost:18443 (HTTPS, самоподписанный сертификат — браузер спросит
+echo                            подтверждение "продолжить" при первом заходе, это ожидаемо)
 echo.
 echo Демо-учётки: admin / admin12345 (Администратор), business / business12345 (Бизнес-пользователь)
 echo.

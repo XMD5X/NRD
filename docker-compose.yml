@@ -1,6 +1,8 @@
 # Локальный запуск полного стенда: docker compose up --build
-# Веб-панель будет доступна на http://localhost:8080 (nginx),
-# backend API напрямую — на http://localhost:8081 (для отладки).
+# Веб-панель будет доступна на http://localhost:18080 и https://localhost:18443 (nginx;
+# HTTPS — на самоподписанном сертификате, браузер покажет предупреждение о безопасности,
+# это ожидаемо для локального стенда — см. nginx/generate-cert.sh),
+# backend API напрямую — на http://localhost:18081 (для отладки).
 #
 # См. HLD.md раздел 7 "Инфраструктура и деплой" — в продакшене используется
 # Windows Server, здесь Docker Compose применяется только как удобный способ
@@ -57,7 +59,16 @@ services:
       - backend
     ports:
       - "18080:80"
+      - "18443:443"
+    volumes:
+      # Именованный volume для самоподписанного TLS-сертификата: генерируется один раз
+      # при первом старте контейнера (см. nginx/generate-cert.sh) и переживает пересборки
+      # образа (docker compose up --build), пока volume не удалён явно (docker compose down -v).
+      # Чтобы использовать настоящий корпоративный сертификат вместо самоподписанного —
+      # положите server.crt и server.key в этот volume вместо сгенерированных.
+      - nginx_certs:/etc/nginx/certs
 
 volumes:
   pgdata:
   backend_data:
+  nginx_certs:

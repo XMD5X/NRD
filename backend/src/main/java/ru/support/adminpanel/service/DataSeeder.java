@@ -165,29 +165,45 @@ public class DataSeeder implements ApplicationRunner {
     }
 
     /**
-     * Задача "Генерация ЭЦП" — отдельная от дерева "Выдача прав доступа...": не привязана
-     * к user_id/счетам, а генерирует по одному JSON-файлу регистрации сертификата на каждую
-     * введённую ЭЦП (комментарий, номер сертификата, дата истечения — три списка через
-     * запятую в одном порядке). На фронтенде отображается отдельной плашкой (см.
-     * DashboardPage.jsx: категории вне набора "эталонных ролей" получают свою карточку).
+     * Задача "Генерация ЭЦП" — отдельная от дерева "Выдача прав доступа...": генерирует по
+     * одному JSON-файлу регистрации сертификата на каждую введённую ЭЦП (User ID, комментарий,
+     * номер сертификата, дата истечения — списки через запятую в одном порядке; User ID —
+     * общий для всех ЭЦП в одном запуске, указывает, какому пользователю в целевой системе
+     * будут отправлены сформированные пакеты). На фронтенде отображается отдельной плашкой
+     * (см. DashboardPage.jsx: категории вне набора "эталонных ролей" получают свою карточку).
      */
     private void seedEcpGenerationScripts(Path scriptsDir, User admin) throws Exception {
         String name = "Генерация ЭЦП — RaiffeisenBankApi";
-        if (scriptRepository.existsByName(name)) {
-            return; // уже засеяно при предыдущем запуске
+        String parametersConfig = "[{\"name\":\"userId\",\"label\":\"User ID\",\"type\":\"text\"},"
+                + "{\"name\":\"comments\",\"label\":\"Комментарии (через запятую, порядок как у номеров/дат)\",\"type\":\"text\"},"
+                + "{\"name\":\"numbers_ecp\",\"label\":\"Номера сертификатов ЭЦП (через запятую)\",\"type\":\"text\"},"
+                + "{\"name\":\"exp_dates_ecp\",\"label\":\"Даты истечения ДД.ММ.ГГГГ (через запятую)\",\"type\":\"text\"}]";
+
+        var existing = scriptRepository.findByName(name);
+        if (existing.isPresent()) {
+            // Установки, засеянные до добавления поля User ID, донастраиваем на лету:
+            // обновляем и конфигурацию параметров, и сам файл скрипта (без потери истории
+            // прошлых выполнений — запись scripts не пересоздаётся, а правится на месте).
+            ScriptEntity s = existing.get();
+            if (!parametersConfig.equals(s.getParametersConfig())) {
+                Path scriptFile = copyClasspathScript("sample-scripts/ecp/generation_ECP_RaiffeisenBankApi.py", scriptsDir);
+                s.setFilePath(scriptFile.toString());
+                s.setParametersConfig(parametersConfig);
+                scriptRepository.save(s);
+            }
+            return;
         }
+
         Path scriptFile = copyClasspathScript("sample-scripts/ecp/generation_ECP_RaiffeisenBankApi.py", scriptsDir);
 
         ScriptEntity s = new ScriptEntity();
         s.setName(name);
-        s.setDescription("Формирует JSON-файл регистрации ЭЦП (сертификата) для модуля RaiffeisenBankApi. "
-                + "На каждую введённую ЭЦП создаётся отдельный JSON-файл; при нескольких ЭЦП результат "
-                + "скачивается одним zip-архивом.");
+        s.setDescription("Формирует JSON-файл регистрации ЭЦП (сертификата) для модуля RaiffeisenBankApi "
+                + "на указанный User ID. На каждую введённую ЭЦП создаётся отдельный JSON-файл; при "
+                + "нескольких ЭЦП результат скачивается одним zip-архивом.");
         s.setFilePath(scriptFile.toString());
         s.setScriptType(ScriptType.PYTHON);
-        s.setParametersConfig("[{\"name\":\"comments\",\"label\":\"Комментарии (через запятую, порядок как у номеров/дат)\",\"type\":\"text\"},"
-                + "{\"name\":\"numbers_ecp\",\"label\":\"Номера сертификатов ЭЦП (через запятую)\",\"type\":\"text\"},"
-                + "{\"name\":\"exp_dates_ecp\",\"label\":\"Даты истечения ДД.ММ.ГГГГ (через запятую)\",\"type\":\"text\"}]");
+        s.setParametersConfig(parametersConfig);
         s.setCategory("Генерация ЭЦП");
         s.setBankName("РАЙФ");
         s.setVisibleToRole(null); // видно и админу, и бизнес-пользователю
