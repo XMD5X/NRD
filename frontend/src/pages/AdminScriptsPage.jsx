@@ -11,6 +11,11 @@ export default function AdminScriptsPage() {
   const [visibleToRole, setVisibleToRole] = useState('')
   const [file, setFile] = useState(null)
 
+  const [editingScript, setEditingScript] = useState(null)
+  const [editingContent, setEditingContent] = useState('')
+  const [loadingContent, setLoadingContent] = useState(false)
+  const [savingContent, setSavingContent] = useState(false)
+
   function load() {
     client.get('/scripts').then((res) => setScripts(res.data))
   }
@@ -44,6 +49,37 @@ export default function AdminScriptsPage() {
     await client.patch(`/scripts/${script.id}/toggle`)
     logger.info(`Переключена активность скрипта ${script.name}`, 'admin-scripts')
     load()
+  }
+
+  async function openEdit(script) {
+    setLoadingContent(true)
+    try {
+      const res = await client.get(`/scripts/${script.id}/content`)
+      setEditingContent(res.data.content)
+      setEditingScript(script)
+    } catch (err) {
+      alert(err.response?.data?.error || 'Не удалось открыть скрипт на редактирование')
+    } finally {
+      setLoadingContent(false)
+    }
+  }
+
+  function closeEdit() {
+    setEditingScript(null)
+    setEditingContent('')
+  }
+
+  async function saveEdit() {
+    setSavingContent(true)
+    try {
+      await client.put(`/scripts/${editingScript.id}/content`, { content: editingContent })
+      logger.info(`Отредактирован скрипт ${editingScript.name}`, 'admin-scripts')
+      closeEdit()
+    } catch (err) {
+      alert(err.response?.data?.error || 'Ошибка сохранения скрипта')
+    } finally {
+      setSavingContent(false)
+    }
   }
 
   return (
@@ -90,11 +126,37 @@ export default function AdminScriptsPage() {
               <td>{s.name}</td>
               <td>{s.scriptType}</td>
               <td>{s.active ? 'Активен' : 'Отключён'}</td>
-              <td><button onClick={() => toggle(s)}>{s.active ? 'Отключить' : 'Включить'}</button></td>
+              <td className="actions">
+                <button onClick={() => toggle(s)}>{s.active ? 'Отключить' : 'Включить'}</button>
+                <button onClick={() => openEdit(s)} disabled={loadingContent}>Редактировать</button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      {editingScript && (
+        <div className="card">
+          <h2>Редактирование: {editingScript.name}</h2>
+          <p className="hint">
+            Изменения применяются сразу к файлу на диске — следующий запуск задачи
+            будет использовать уже отредактированную версию. Предыдущая версия файла
+            сохраняется рядом с расширением .bak (только последняя, не полная история).
+          </p>
+          <textarea
+            value={editingContent}
+            onChange={(e) => setEditingContent(e.target.value)}
+            spellCheck={false}
+            style={{ minHeight: 420, fontFamily: 'monospace', fontSize: 13 }}
+          />
+          <div className="actions" style={{ marginTop: 12 }}>
+            <button onClick={saveEdit} disabled={savingContent}>
+              {savingContent ? 'Сохраняю…' : 'Сохранить'}
+            </button>
+            <button onClick={closeEdit} disabled={savingContent}>Отмена</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

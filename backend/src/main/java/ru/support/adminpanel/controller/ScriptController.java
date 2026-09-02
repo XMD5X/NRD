@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ru.support.adminpanel.dto.ExecuteScriptRequest;
 import ru.support.adminpanel.dto.ExecutionResponse;
+import ru.support.adminpanel.dto.ScriptContentRequest;
 import ru.support.adminpanel.dto.ScriptResponse;
 import ru.support.adminpanel.entity.Role;
 import ru.support.adminpanel.entity.ScriptType;
@@ -19,6 +20,7 @@ import ru.support.adminpanel.service.ScriptService;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -59,6 +61,19 @@ public class ScriptController {
     @PatchMapping("/{id}/toggle")
     public ScriptResponse toggle(@PathVariable UUID id) {
         return ScriptResponse.from(scriptService.toggleActive(id, CurrentUserUtil.get()));
+    }
+
+    /** Содержимое файла скрипта — для редактирования прямо в браузере (/admin/scripts).
+     *  Доступ только ADMIN (см. SecurityConfig: /api/scripts/** без явного метода ниже
+     *  по списку матчеров уходит в hasRole("ADMIN"), тот же принцип, что и у загрузки). */
+    @GetMapping("/{id}/content")
+    public Map<String, String> content(@PathVariable UUID id) {
+        return Map.of("content", scriptService.readContent(id));
+    }
+
+    @PutMapping("/{id}/content")
+    public ScriptResponse updateContent(@PathVariable UUID id, @RequestBody ScriptContentRequest request) {
+        return ScriptResponse.from(scriptService.updateContent(id, request.getContent(), CurrentUserUtil.get()));
     }
 
     @PostMapping("/{id}/execute")

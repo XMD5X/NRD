@@ -11,6 +11,7 @@ import ru.support.adminpanel.security.CurrentUser;
 import ru.support.adminpanel.util.SafeFileNames;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -28,6 +29,12 @@ public class ScriptService {
     private final ScriptRepository scriptRepository;
     private final AppProperties props;
     private final ActionHistoryService actionHistoryService;
+
+    /** Ограничение на размер содержимого при редактировании скрипта прямо в
+     *  браузере (см. AdminScriptsPage.jsx) — по аналогии с лимитом на загрузку
+     *  файла (application.yml, servlet.multipart.max-file-size), чтобы через
+     *  редактор нельзя было записать на диск файл неограниченного размера. */
+    private static final int MAX_CONTENT_BYTES = 5 * 1024 * 1024;
 
     public ScriptService(ScriptRepository scriptRepository, AppProperties props,
                           ActionHistoryService actionHistoryService) {
@@ -99,5 +106,43 @@ public class ScriptService {
     public ScriptEntity getOrThrow(UUID id) {
         return scriptRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Скрипт не найден"));
+    }
+
+    /** Содержимое файла скрипта для редактирования прямо в браузере (/admin/scripts). */
+    public String readContent(UUID id) {
+        ScriptEntity s = getOrThrow(id);
+        try {
+            return Files.readString(Path.of(s.getFilePath()), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException("Не удалось прочитать файл скрипта: " + e.getMessage(), e);
+        }
+    }
+
+    /** Сохраняет отредактированное содержимое поверх файла скрипта на диске.
+     *  ScriptEntity в БД не меняется (путь к файлу остаётся тем же) — только сам файл. */
+    public ScriptEntity updateContent(UUID id, String content, CurrentUser actor) {
+        ScriptEntity s = getOrThrow(id);
+        if (content == null) {
+            throw new IllegalArgumentException("Пустое содержимое скрипта");
+        }
+        if (content.getBytes(StandardCharsets.UTF_8).length > MAX_CONTENT_BYTES) {
+            throw new IllegalArgumentException("Содержимое скрипта слишком большое (максимум "
+                    + (MAX_CONTENT_BYTES / 1024 / 1024) + " МБ)");
+        }
+        try {
+            Path target = Path.of(s.getFilePath());
+            // Простая защита от опечатки при правке прямо в браузере — рядом остаётся ОДНА
+            // предыдущая версия (перезаписывается на каждое следующее редактирование, это
+            // не полноценная история версий, а "отмена последнего шага" вручную при нужде).
+            if (Files.exists(target)) {
+                Files.copy(target, Path.of(target + ".bak"), StandardCopyOption.REPLACE_EXISTING);
+            }
+            Files.writeString(target, content, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException("Не удалось сохранить файл скрипта: " + e.getMessage(), e);
+        }
+        actionHistoryService.record(actor.uuid(), "SCRIPT_EDIT", "SCRIPT", id,
+                "Отредактирован скрипт " + s.getName());
+        return s;
     }
 }
