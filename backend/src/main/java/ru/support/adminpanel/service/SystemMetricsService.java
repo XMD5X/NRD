@@ -106,6 +106,7 @@ public class SystemMetricsService {
         long frontendLogs = directorySize(props.getFrontendLogsDir()) + directorySize(props.getFrontendLogsArchiveDir());
         dirs.add(new SystemMetricsResponse.DirUsage("Логи фронтенда", props.getFrontendLogsDir(), frontendLogs));
         dirs.add(new SystemMetricsResponse.DirUsage("Логи backend", props.getBackendLogsDir(), directorySize(props.getBackendLogsDir())));
+        dirs.add(new SystemMetricsResponse.DirUsage("Access-логи nginx", props.getNginxLogsDir(), directorySize(props.getNginxLogsDir())));
         response.setDataDirs(dirs);
     }
 

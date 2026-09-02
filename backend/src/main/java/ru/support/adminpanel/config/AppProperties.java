@@ -30,6 +30,11 @@ public class AppProperties {
      *  и уровень логирования настраиваются в logback-spring.xml, а не здесь. */
     private String backendLogsDir = "./data/logs/backend";
 
+    /** Каталог с access-логами nginx (том nginx_logs, смонтирован read-only —
+     *  см. docker-compose.yml и nginx/nginx.conf) — только для кнопки
+     *  "Access-логи nginx" в /admin/settings, backend туда ничего не пишет. */
+    private String nginxLogsDir = "./nginx-logs";
+
     /** Секрет для подписи JWT. */
     private String jwtSecret = "change-me-in-production-please-use-env-var-adminpanel-secret-key";
 
@@ -56,6 +61,9 @@ public class AppProperties {
 
     public String getBackendLogsDir() { return backendLogsDir; }
     public void setBackendLogsDir(String backendLogsDir) { this.backendLogsDir = backendLogsDir; }
+
+    public String getNginxLogsDir() { return nginxLogsDir; }
+    public void setNginxLogsDir(String nginxLogsDir) { this.nginxLogsDir = nginxLogsDir; }
 
     public String getJwtSecret() { return jwtSecret; }
     public void setJwtSecret(String jwtSecret) { this.jwtSecret = jwtSecret; }

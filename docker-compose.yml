@@ -53,6 +53,9 @@ services:
       APP_JWT_SECRET: ${APP_JWT_SECRET:?Секрет не задан — запустите deploy.bat, он создаст .env автоматически, либо скопируйте .env.example в .env и заполните APP_JWT_SECRET вручную}
     volumes:
       - backend_data:/app/data
+      # Access-логи nginx — только на чтение: backend их только зипует и
+      # отдаёт по кнопке "Access-логи nginx" (/admin/settings), сам не пишет.
+      - nginx_logs:/app/nginx-logs:ro
     ports:
       # Только на localhost — этот порт открывает API напрямую (HTTP, без TLS,
       # в обход nginx) и предназначен исключительно для локальной отладки.
@@ -78,8 +81,12 @@ services:
       # Чтобы использовать настоящий корпоративный сертификат вместо самоподписанного —
       # положите server.crt и server.key в этот volume вместо сгенерированных.
       - nginx_certs:/etc/nginx/certs
+      # Access-логи nginx (по дням, см. nginx/nginx.conf) — тот же том
+      # смонтирован в backend read-only, см. выше.
+      - nginx_logs:/var/log/nginx
 
 volumes:
   pgdata:
   backend_data:
   nginx_certs:
+  nginx_logs:

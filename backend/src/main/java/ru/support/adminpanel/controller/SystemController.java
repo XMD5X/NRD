@@ -81,6 +81,12 @@ public class SystemController {
         return zipResponse(buffer.toByteArray(), "frontend");
     }
 
+    /** Архив (zip) access-логов nginx, по одному файлу на день (см. nginx/nginx.conf). */
+    @GetMapping("/logs/nginx-access")
+    public ResponseEntity<ByteArrayResource> downloadNginxAccessLogs() throws IOException {
+        return downloadDirectoryAsZip(Path.of(appProperties.getNginxLogsDir()), "nginx-access");
+    }
+
     /** Журнал безопасности (входы + действия пользователей) в формате CEF, одним файлом. */
     @GetMapping("/logs/security-cef")
     public ResponseEntity<ByteArrayResource> downloadSecurityCef() {

@@ -9,9 +9,12 @@ import ru.support.adminpanel.repository.LoginHistoryRepository;
 import ru.support.adminpanel.repository.UserRepository;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -32,6 +35,13 @@ public class CefAuditExportService {
     private static final String CEF_VENDOR = "SIBUR";
     private static final String CEF_PRODUCT = "NRD-Business-Panel";
     private static final String CEF_VERSION = "1.0";
+
+    // Один из форматов даты/времени, явно разрешённых спецификацией CEF для
+    // поля rt (наравне с epoch-миллисекундами) — выбран этот, а не миллисекунды,
+    // чтобы дата и время были видны сразу при открытии файла глазами, а не только
+    // после разбора числа парсером SIEM.
+    private static final DateTimeFormatter CEF_TIME_FORMAT =
+            DateTimeFormatter.ofPattern("MMM dd yyyy HH:mm:ss.SSS 'UTC'", Locale.US);
 
     private final LoginHistoryRepository loginHistoryRepository;
     private final ActionHistoryRepository actionHistoryRepository;
@@ -72,7 +82,7 @@ public class CefAuditExportService {
         String sigId = h.isSuccess() ? "LOGIN_SUCCESS" : "LOGIN_FAILURE";
         String name = h.isSuccess() ? "Успешный вход в систему" : "Неудачная попытка входа";
         int severity = h.isSuccess() ? 2 : 6;
-        String extension = "rt=" + toEpochMillis(h.getAttemptedAt())
+        String extension = "rt=" + formatCefTime(h.getAttemptedAt())
                 + " suser=" + escapeExtension(h.getLoginAttempted())
                 + " src=" + escapeExtension(h.getIpAddress() == null ? "unknown" : h.getIpAddress())
                 + " outcome=" + (h.isSuccess() ? "Success" : "Failure");
@@ -82,7 +92,7 @@ public class CefAuditExportService {
     private String toCef(ActionHistory h, Map<UUID, String> loginById) {
         String actor = h.getUserId() == null ? "unknown" : loginById.getOrDefault(h.getUserId(), h.getUserId().toString());
         StringBuilder extension = new StringBuilder();
-        extension.append("rt=").append(toEpochMillis(h.getCreatedAt()))
+        extension.append("rt=").append(formatCefTime(h.getCreatedAt()))
                 .append(" suser=").append(escapeExtension(actor))
                 .append(" act=").append(escapeExtension(h.getActionType()))
                 .append(" outcome=Success");
@@ -109,8 +119,11 @@ public class CefAuditExportService {
                 + escapeHeader(sigId) + "|" + escapeHeader(name) + "|" + severity + "|";
     }
 
-    private long toEpochMillis(OffsetDateTime time) {
-        return time == null ? 0L : time.toInstant().toEpochMilli();
+    private String formatCefTime(OffsetDateTime time) {
+        if (time == null) {
+            return "";
+        }
+        return time.withOffsetSameInstant(ZoneOffset.UTC).format(CEF_TIME_FORMAT);
     }
 
     /** CEF header-поля: экранируем "\" и "|" (разделитель полей заголовка). */

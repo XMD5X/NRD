@@ -196,9 +196,9 @@ export default function AdminSettingsPage() {
       <div className="card">
         <h2>Выгрузка логов</h2>
         <p className="hint">
-          Скачивание архивов с файловыми логами backend и фронтенда, а также
-          журнала безопасности (входы + действия пользователей) в формате CEF
-          для передачи в SIEM.
+          Скачивание архивов с файловыми логами backend, фронтенда и
+          access-логами nginx (по дням), а также журнала безопасности
+          (входы + действия пользователей) в формате CEF для передачи в SIEM.
         </p>
         <div className="actions">
           <button disabled={downloadingLog === 'backend'}
@@ -208,6 +208,10 @@ export default function AdminSettingsPage() {
           <button disabled={downloadingLog === 'frontend'}
                   onClick={() => downloadLog('/system/logs/frontend', 'frontend.zip', 'frontend')}>
             {downloadingLog === 'frontend' ? 'Скачиваю…' : 'Логи фронтенда'}
+          </button>
+          <button disabled={downloadingLog === 'nginx'}
+                  onClick={() => downloadLog('/system/logs/nginx-access', 'nginx-access.zip', 'nginx')}>
+            {downloadingLog === 'nginx' ? 'Скачиваю…' : 'Access-логи nginx'}
           </button>
           <button disabled={downloadingLog === 'cef'}
                   onClick={() => downloadLog('/system/logs/security-cef', 'cef.log', 'cef')}>
