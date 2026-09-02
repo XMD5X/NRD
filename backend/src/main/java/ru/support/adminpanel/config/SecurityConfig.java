@@ -50,7 +50,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/login").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/api/users/**").hasRole("ADMIN")
-                .requestMatchers("/api/scripts", "/api/scripts/*/execute").authenticated()
+                .requestMatchers("/api/scripts", "/api/scripts/*/execute", "/api/scripts/execute-batch", "/api/scripts/execute-batch/template").authenticated()
                 .requestMatchers("/api/scripts/**").hasRole("ADMIN")
                 .requestMatchers("/api/system/log-level").authenticated()
                 .anyRequest().authenticated()

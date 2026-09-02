@@ -9,4 +9,5 @@ import java.util.UUID;
 public interface ScriptRepository extends JpaRepository<ScriptEntity, UUID> {
     List<ScriptEntity> findByActiveTrue();
     boolean existsByName(String name);
+    List<ScriptEntity> findByCategoryAndActiveTrue(String category);
 }

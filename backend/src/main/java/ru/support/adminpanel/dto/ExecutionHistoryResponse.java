@@ -39,9 +39,15 @@ public class ExecutionHistoryResponse {
         ExecutionHistoryResponse r = new ExecutionHistoryResponse();
         r.id = e.getId();
         r.scriptId = e.getScriptId();
-        r.scriptName = script != null ? script.getName() : null;
+        boolean isBatch = e.getBatchLabel() != null && !e.getBatchLabel().isBlank();
+        // Массовый запуск "все банки сразу" фактически прогоняет несколько разных
+        // скриптов — script_id тут лишь техническая ссылка на первый обработанный
+        // банк, поэтому в истории показываем это явно, а не как обычный одиночный запуск.
+        r.scriptName = isBatch
+                ? (script != null ? script.getCategory() : "Выдача прав доступа") + " — все банки"
+                : (script != null ? script.getName() : null);
         r.category = script != null ? script.getCategory() : null;
-        r.bankName = script != null ? script.getBankName() : null;
+        r.bankName = isBatch ? e.getBatchLabel() : (script != null ? script.getBankName() : null);
         r.userId = e.getUserId();
         r.userLogin = user != null ? user.getLogin() : null;
         r.status = e.getStatus();

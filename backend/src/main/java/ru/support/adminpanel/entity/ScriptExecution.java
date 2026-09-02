@@ -44,6 +44,13 @@ public class ScriptExecution {
     @Column(name = "sent_to_target_at")
     private OffsetDateTime sentToTargetAt;
 
+    /** Заполняется только для массового запуска по всем банкам сразу (см.
+     *  ExecutionService.executeBatch) — список банков, реально обработанных
+     *  в рамках этого выполнения, для отображения в истории. Null для обычных
+     *  (одиночных) запусков. */
+    @Column(name = "batch_label")
+    private String batchLabel;
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 
@@ -76,4 +83,7 @@ public class ScriptExecution {
 
     public OffsetDateTime getSentToTargetAt() { return sentToTargetAt; }
     public void setSentToTargetAt(OffsetDateTime sentToTargetAt) { this.sentToTargetAt = sentToTargetAt; }
+
+    public String getBatchLabel() { return batchLabel; }
+    public void setBatchLabel(String batchLabel) { this.batchLabel = batchLabel; }
 }

@@ -3,6 +3,11 @@ import { Link, useParams } from 'react-router-dom'
 import useScripts from '../hooks/useScripts.js'
 import { ACCESS_RIGHTS_ROOT, groupScripts } from '../taskGroups.js'
 import ExecutionPanel from './ExecutionPanel.jsx'
+import BulkAccessPanel from './BulkAccessPanel.jsx'
+
+// Служебное значение select'а "Банк" для режима "сразу по всем банкам" — не
+// пересекается с реальными UUID скриптов, поэтому безопасно как маркер.
+const ALL_BANKS = '__ALL_BANKS__'
 
 // Одна страница на все три вида задач (mode передаётся из маршрута в App.jsx):
 //  - "access-rights" — единственная задача с деревом "эталонная роль -> банк"
@@ -22,6 +27,7 @@ export default function TaskDetailPage({ mode }) {
     () => groups.accessRightsScripts.filter((s) => s.category === role),
     [groups.accessRightsScripts, role]
   )
+  const isAllBanks = accessBankId === ALL_BANKS
   const accessSelected = banksInRole.find((s) => s.id === accessBankId)
 
   const decodedCategory = categoryName ? decodeURIComponent(categoryName) : ''
@@ -65,12 +71,14 @@ export default function TaskDetailPage({ mode }) {
                 {banksInRole.map((s) => (
                   <option key={s.id} value={s.id}>{s.bankName || s.name}</option>
                 ))}
+                <option value={ALL_BANKS}>Все банки</option>
               </select>
             </label>
           )}
           {accessSelected && <p className="hint">{accessSelected.description}</p>}
         </div>
         {accessSelected && <ExecutionPanel key={accessSelected.id} script={accessSelected} />}
+        {isAllBanks && <BulkAccessPanel key={`all-banks:${role}`} category={role} />}
       </div>
     )
   }
