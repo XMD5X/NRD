@@ -67,7 +67,7 @@ public class SystemController {
     /** Архив (zip) всех файлов логов backend — если их несколько (ротация по дням/размеру). */
     @GetMapping("/logs/backend")
     public ResponseEntity<ByteArrayResource> downloadBackendLogs() throws IOException {
-        return downloadDirectoryAsZip(Path.of(appProperties.getBackendLogsDir()), "backend-logs");
+        return downloadDirectoryAsZip(Path.of(appProperties.getBackendLogsDir()), "backend");
     }
 
     /** Архив (zip) активных и уже заархивированных файлов логов фронтенда. */
@@ -78,17 +78,17 @@ public class SystemController {
             addDirectoryToZip(zos, Path.of(appProperties.getFrontendLogsDir()), "active");
             addDirectoryToZip(zos, Path.of(appProperties.getFrontendLogsArchiveDir()), "archive");
         }
-        return zipResponse(buffer.toByteArray(), "frontend-logs");
+        return zipResponse(buffer.toByteArray(), "frontend");
     }
 
     /** Журнал безопасности (входы + действия пользователей) в формате CEF, одним файлом. */
     @GetMapping("/logs/security-cef")
     public ResponseEntity<ByteArrayResource> downloadSecurityCef() {
         byte[] content = cefAuditExportService.buildCefLog().getBytes(StandardCharsets.UTF_8);
-        String filename = "security-audit-" + LocalDate.now().format(FILE_DATE) + ".cef.log";
+        String filename = LocalDate.now().format(FILE_DATE) + "-cef.log";
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION,
-                        ContentDisposition.attachment().filename(filename, StandardCharsets.UTF_8).build().toString())
+                        ContentDisposition.attachment().filename(filename).build().toString())
                 .contentType(MediaType.TEXT_PLAIN)
                 .body(new ByteArrayResource(content));
     }
@@ -121,10 +121,13 @@ public class SystemController {
     }
 
     private ResponseEntity<ByteArrayResource> zipResponse(byte[] content, String namePrefix) {
-        String filename = namePrefix + "-" + LocalDate.now().format(FILE_DATE) + ".zip";
+        // Имя = дата + тип лога (см. пожелание "дата + наименование, бэк или фронт") —
+        // так файлы за разные дни сортируются по имени в порядке дат, а не вперемешку
+        // по префиксу "backend"/"frontend".
+        String filename = LocalDate.now().format(FILE_DATE) + "-" + namePrefix + ".zip";
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION,
-                        ContentDisposition.attachment().filename(filename, StandardCharsets.UTF_8).build().toString())
+                        ContentDisposition.attachment().filename(filename).build().toString())
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(new ByteArrayResource(content));
     }

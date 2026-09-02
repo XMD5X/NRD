@@ -35,7 +35,6 @@ export default function AdminSettingsPage() {
 
   const [metrics, setMetrics] = useState(null)
   const [frontendMetrics, setFrontendMetrics] = useState(null)
-  const [metricsLoading, setMetricsLoading] = useState(false)
   const [metricsError, setMetricsError] = useState(null)
   const [downloadingLog, setDownloadingLog] = useState(null)
 
@@ -45,6 +44,10 @@ export default function AdminSettingsPage() {
       applyClientLogLevel(res.data.level)
     })
     loadMetrics()
+    // Автообновление раз в 10 секунд, без ручной кнопки — карточка должна
+    // сама показывать актуальную картину, пока страница открыта.
+    const timer = setInterval(loadMetrics, 10000)
+    return () => clearInterval(timer)
   }, [])
 
   async function handleChange(newLevel) {
@@ -60,12 +63,12 @@ export default function AdminSettingsPage() {
   }
 
   function loadMetrics() {
-    setMetricsLoading(true)
-    setMetricsError(null)
     client.get('/system/metrics')
-      .then((res) => setMetrics(res.data))
+      .then((res) => {
+        setMetrics(res.data)
+        setMetricsError(null)
+      })
       .catch(() => setMetricsError('Не удалось получить метрики backend'))
-      .finally(() => setMetricsLoading(false))
 
     // Отдаётся напрямую nginx (не через backend — см. nginx/generate-metrics.sh),
     // поэтому обычный fetch на тот же origin, а не client (baseURL=/api).
@@ -182,9 +185,12 @@ export default function AdminSettingsPage() {
             </tbody>
           </table>
         )}
-        <button style={{ marginTop: 16 }} onClick={loadMetrics} disabled={metricsLoading}>
-          {metricsLoading ? 'Обновляю…' : 'Обновить'}
-        </button>
+        {b && b.generatedAt && (
+          <p className="hint" style={{ marginTop: 16, marginBottom: 0 }}>
+            Обновляется автоматически каждые 10 секунд. Последнее обновление:{' '}
+            {new Date(b.generatedAt).toLocaleTimeString('ru-RU')}
+          </p>
+        )}
       </div>
 
       <div className="card">
@@ -196,15 +202,15 @@ export default function AdminSettingsPage() {
         </p>
         <div className="actions">
           <button disabled={downloadingLog === 'backend'}
-                  onClick={() => downloadLog('/system/logs/backend', 'backend-logs.zip', 'backend')}>
+                  onClick={() => downloadLog('/system/logs/backend', 'backend.zip', 'backend')}>
             {downloadingLog === 'backend' ? 'Скачиваю…' : 'Логи backend'}
           </button>
           <button disabled={downloadingLog === 'frontend'}
-                  onClick={() => downloadLog('/system/logs/frontend', 'frontend-logs.zip', 'frontend')}>
+                  onClick={() => downloadLog('/system/logs/frontend', 'frontend.zip', 'frontend')}>
             {downloadingLog === 'frontend' ? 'Скачиваю…' : 'Логи фронтенда'}
           </button>
           <button disabled={downloadingLog === 'cef'}
-                  onClick={() => downloadLog('/system/logs/security-cef', 'security-audit.cef.log', 'cef')}>
+                  onClick={() => downloadLog('/system/logs/security-cef', 'cef.log', 'cef')}>
             {downloadingLog === 'cef' ? 'Скачиваю…' : 'Журнал безопасности (CEF)'}
           </button>
         </div>
