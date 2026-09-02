@@ -91,3 +91,43 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 .log-output { background: var(--sibur-dark-teal); color: var(--sibur-mint); padding: 10px; border-radius: 6px; overflow-x: auto; font-size: 12px; }
 .badge { padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 500; }
 .badge-success { background: var(--sibur-mint); color: var(--sibur-dark-teal); }
+
+/* Плитки задач на главной ("Доступные задачи") — 3 в ряд, адаптивно сужаются. */
+.task-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+@media (max-width: 900px) {
+  .task-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .task-grid { grid-template-columns: 1fr; }
+}
+.task-tile {
+  display: block;
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  border-top: 3px solid var(--sibur-dna);
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+.task-tile:hover {
+  box-shadow: 0 4px 14px rgba(0,0,0,0.14);
+  border-top-color: var(--sibur-orange);
+  transform: translateY(-2px);
+}
+.task-tile h2 { margin: 0 0 8px; font-size: 16px; color: var(--sibur-dark-teal); }
+.task-tile .hint { margin: 0; }
+.task-back {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: var(--sibur-dna);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+.task-back:hover { color: var(--sibur-dark-teal); text-decoration: underline; }

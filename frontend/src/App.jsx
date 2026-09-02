@@ -4,6 +4,7 @@ import Layout from './components/Layout.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
+import TaskDetailPage from './pages/TaskDetailPage.jsx'
 import UploadPage from './pages/UploadPage.jsx'
 import HistoryPage from './pages/HistoryPage.jsx'
 import AdminUsersPage from './pages/AdminUsersPage.jsx'
@@ -17,6 +18,21 @@ export default function App() {
       <Route path="/" element={
         <ProtectedRoute>
           <Layout><DashboardPage /></Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/tasks/access-rights" element={
+        <ProtectedRoute>
+          <Layout><TaskDetailPage mode="access-rights" /></Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/tasks/category/:categoryName" element={
+        <ProtectedRoute>
+          <Layout><TaskDetailPage mode="category" /></Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/tasks/script/:scriptId" element={
+        <ProtectedRoute>
+          <Layout><TaskDetailPage mode="script" /></Layout>
         </ProtectedRoute>
       } />
       <Route path="/uploads" element={
