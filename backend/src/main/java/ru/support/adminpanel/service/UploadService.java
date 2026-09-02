@@ -7,6 +7,7 @@ import ru.support.adminpanel.entity.UploadedFile;
 import ru.support.adminpanel.entity.UploadedFileType;
 import ru.support.adminpanel.repository.UploadedFileRepository;
 import ru.support.adminpanel.security.CurrentUser;
+import ru.support.adminpanel.util.SafeFileNames;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -37,8 +38,10 @@ public class UploadService {
         try {
             Path dir = Path.of(props.getUploadsDir());
             Files.createDirectories(dir);
-            String storedName = UUID.randomUUID() + "-" + file.getOriginalFilename();
-            Path target = dir.resolve(storedName);
+            // См. SafeFileNames: имя файла от клиента нельзя использовать как есть — путь
+            // traversal через "../" в оригинальном имени файла (аудит безопасности).
+            String storedName = UUID.randomUUID() + "-" + SafeFileNames.sanitize(file.getOriginalFilename());
+            Path target = SafeFileNames.resolveInside(dir, storedName);
             Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
 
             UploadedFile uf = new UploadedFile();

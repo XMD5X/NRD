@@ -10,6 +10,7 @@ import ru.support.adminpanel.repository.LoginHistoryRepository;
 import ru.support.adminpanel.repository.UserRepository;
 import ru.support.adminpanel.security.JwtService;
 
+import java.time.OffsetDateTime;
 import java.util.Optional;
 
 /**
@@ -19,6 +20,14 @@ import java.util.Optional;
  */
 @Service
 public class AuthService {
+
+    /** Защита от подбора пароля (см. аудит безопасности — раньше попытки входа
+     *  ничем не были ограничены). Считаем неудачные попытки по конкретной строке
+     *  логина за последние LOCKOUT_WINDOW_MINUTES — этого достаточно, чтобы
+     *  сделать автоматический перебор бессмысленным, но не мешает человеку,
+     *  который пару раз опечатался в пароле. */
+    private static final int MAX_FAILED_ATTEMPTS = 5;
+    private static final int LOCKOUT_WINDOW_MINUTES = 15;
 
     private final UserRepository userRepository;
     private final LoginHistoryRepository loginHistoryRepository;
@@ -36,6 +45,16 @@ public class AuthService {
     }
 
     public LoginResponse login(LoginRequest request, String ipAddress) {
+        OffsetDateTime windowStart = OffsetDateTime.now().minusMinutes(LOCKOUT_WINDOW_MINUTES);
+        long recentFailures = loginHistoryRepository
+                .countByLoginAttemptedIgnoreCaseAndSuccessFalseAndAttemptedAtAfter(request.getLogin(), windowStart);
+        if (recentFailures >= MAX_FAILED_ATTEMPTS) {
+            // Намеренно НЕ пишем эту попытку в LoginHistory — иначе окно блокировки
+            // само себя продлевало бы бесконечно при продолжающемся переборе.
+            throw new IllegalStateException("Слишком много неудачных попыток входа. "
+                    + "Попробуйте снова через " + LOCKOUT_WINDOW_MINUTES + " минут.");
+        }
+
         Optional<User> userOpt = userRepository.findByLogin(request.getLogin());
 
         boolean success = false;
@@ -56,9 +75,11 @@ public class AuthService {
         loginHistoryRepository.save(history);
 
         if (!success) {
-            if (user != null && user.isBlocked()) {
-                throw new IllegalStateException("Пользователь заблокирован");
-            }
+            // Намеренно ОДНО и то же сообщение для "нет такого логина", "неверный
+            // пароль" и "пользователь заблокирован" — иначе по ответу можно было бы
+            // перебором узнавать, какие логины вообще существуют в системе (user
+            // enumeration) и кто из них заблокирован. Администратор видит реальную
+            // причину в /api/users (там уже требуется роль ADMIN).
             throw new IllegalArgumentException("Неверный логин или пароль");
         }
 

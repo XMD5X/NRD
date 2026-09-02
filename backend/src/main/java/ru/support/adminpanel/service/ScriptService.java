@@ -8,6 +8,7 @@ import ru.support.adminpanel.entity.ScriptEntity;
 import ru.support.adminpanel.entity.ScriptType;
 import ru.support.adminpanel.repository.ScriptRepository;
 import ru.support.adminpanel.security.CurrentUser;
+import ru.support.adminpanel.util.SafeFileNames;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -58,8 +59,11 @@ public class ScriptService {
         try {
             Path dir = Path.of(props.getScriptsDir());
             Files.createDirectories(dir);
-            String safeName = UUID.randomUUID() + "-" + file.getOriginalFilename();
-            Path target = dir.resolve(safeName);
+            // Имя файла обязательно очищаем — file.getOriginalFilename() приходит от клиента
+            // без каких-либо гарантий формата, специально сформированное имя с "../" могло бы
+            // увести запись за пределы каталога скриптов (path traversal), см. SafeFileNames.
+            String safeName = UUID.randomUUID() + "-" + SafeFileNames.sanitize(file.getOriginalFilename());
+            Path target = SafeFileNames.resolveInside(dir, safeName);
             Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
 
             ScriptEntity s = new ScriptEntity();

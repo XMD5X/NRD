@@ -19,7 +19,10 @@ services:
     environment:
       POSTGRES_DB: adminpanel
       POSTGRES_USER: adminpanel
-      POSTGRES_PASSWORD: adminpanel
+      # Берётся из .env (создаётся deploy.bat, в git не попадает — см. .env.example).
+      # ВНИМАНИЕ: применяется только при первой инициализации пустого тома pgdata —
+      # инструкция по безопасной смене пароля на уже развёрнутом стенде в .env.example.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-adminpanel}
     volumes:
       - pgdata:/var/lib/postgresql/data
     # Порт наружу не пробрасываем — backend обращается к БД внутри docker-сети
@@ -42,12 +45,20 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/adminpanel
       SPRING_DATASOURCE_USERNAME: adminpanel
-      SPRING_DATASOURCE_PASSWORD: adminpanel
-      APP_JWT_SECRET: local-dev-secret-change-in-production-please-adminpanel
+      # Оба секрета — из .env (создаётся deploy.bat автоматически, в git не попадает).
+      # Раньше значения были захардкожены прямо здесь и утекли в историю git — это была
+      # критичная уязвимость: обладая доступом к репозиторию, можно было подделать JWT
+      # администратора без единого запроса к серверу. См. .env.example.
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-adminpanel}
+      APP_JWT_SECRET: ${APP_JWT_SECRET:?Секрет не задан — запустите deploy.bat, он создаст .env автоматически, либо скопируйте .env.example в .env и заполните APP_JWT_SECRET вручную}
     volumes:
       - backend_data:/app/data
     ports:
-      - "18081:8080"
+      # Только на localhost — этот порт открывает API напрямую (HTTP, без TLS,
+      # в обход nginx) и предназначен исключительно для локальной отладки.
+      # Раньше был "18081:8080" (слушал на всех интерфейсах) — c любой другой
+      # машины в той же сети можно было достучаться до backend в открытом виде.
+      - "127.0.0.1:18081:8080"
 
   web:
     image: adminpanel-web:latest

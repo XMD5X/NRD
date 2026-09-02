@@ -2,6 +2,7 @@ package ru.support.adminpanel.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -50,7 +51,20 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/login").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/api/users/**").hasRole("ADMIN")
-                .requestMatchers("/api/scripts", "/api/scripts/*/execute", "/api/scripts/execute-batch", "/api/scripts/execute-batch/template").authenticated()
+                // ВАЖНО: requestMatchers("/api/scripts") без указания HTTP-метода закрывает
+                // ВСЕ методы на этом пути — включая POST (загрузка нового скрипта), которая
+                // обязана быть доступна только ADMIN (см. javadoc ScriptService.upload: backend
+                // выполняет содержимое загруженного скрипта как есть, с правами сервисного
+                // процесса). Раньше здесь стоял один общий authenticated()-матчер без метода,
+                // из-за чего POST /api/scripts был доступен ЛЮБОМУ авторизованному пользователю
+                // (включая BUSINESS_USER) — фактически произвольное выполнение кода на сервере.
+                // Поэтому каждый публичный для BUSINESS_USER маршрут здесь разграничен
+                // явным HTTP-методом, а всё остальное (включая POST /api/scripts — загрузку
+                // нового скрипта, и PATCH /api/scripts/{id}/toggle) уходит в catch-all ниже.
+                .requestMatchers(HttpMethod.GET, "/api/scripts").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/scripts/*/execute").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/scripts/execute-batch").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/scripts/execute-batch/template").authenticated()
                 .requestMatchers("/api/scripts/**").hasRole("ADMIN")
                 .requestMatchers("/api/system/log-level").authenticated()
                 .anyRequest().authenticated()

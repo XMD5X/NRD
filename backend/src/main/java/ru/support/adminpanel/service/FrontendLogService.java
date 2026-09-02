@@ -23,6 +23,12 @@ import java.io.File;
 @Service
 public class FrontendLogService {
 
+    // Ограничения на батч логов от фронтенда (см. аудит безопасности — раньше
+    // не было вообще никакого предела, авторизованный пользователь мог слать
+    // сколь угодно большие/частые батчи и заполнить диск логами).
+    private static final int MAX_ENTRIES_PER_BATCH = 500;
+    private static final int MAX_FIELD_LENGTH = 2000;
+
     private final AppProperties props;
     private static final DateTimeFormatter FILE_DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
@@ -34,20 +40,29 @@ public class FrontendLogService {
         if (entries == null || entries.isEmpty()) {
             return;
         }
+        List<FrontendLogEntry> limited = entries.size() > MAX_ENTRIES_PER_BATCH
+                ? entries.subList(0, MAX_ENTRIES_PER_BATCH)
+                : entries;
         try {
             Path dir = Path.of(props.getFrontendLogsDir());
             Files.createDirectories(dir);
             String fileName = "frontend-" + LocalDate.now().format(FILE_DATE) + ".log";
             Path file = dir.resolve(fileName);
             StringBuilder sb = new StringBuilder();
-            for (FrontendLogEntry e : entries) {
+            for (FrontendLogEntry e : limited) {
                 sb.append(String.format("[%s] %-7s %s %s%n",
-                        e.getTimestamp(), e.getLevel(), e.getContext() == null ? "" : e.getContext(), e.getMessage()));
+                        truncate(e.getTimestamp()), truncate(e.getLevel()),
+                        e.getContext() == null ? "" : truncate(e.getContext()), truncate(e.getMessage())));
             }
             Files.writeString(file, sb.toString(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         } catch (IOException e) {
             throw new RuntimeException("Не удалось записать лог фронтенда: " + e.getMessage(), e);
         }
+    }
+
+    private static String truncate(String s) {
+        if (s == null) return "";
+        return s.length() > MAX_FIELD_LENGTH ? s.substring(0, MAX_FIELD_LENGTH) + "…(обрезано)" : s;
     }
 
     /**

@@ -1,5 +1,6 @@
 package ru.support.adminpanel.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import ru.support.adminpanel.dto.*;
 import ru.support.adminpanel.security.CurrentUserUtil;
@@ -25,7 +26,9 @@ public class UserController {
     }
 
     @PostMapping
-    public UserResponse create(@RequestBody CreateUserRequest request) {
+    public UserResponse create(@Valid @RequestBody CreateUserRequest request) {
+        // @Valid здесь раньше отсутствовал — аннотации @NotBlank/@Size на
+        // CreateUserRequest молча ничего не проверяли (см. аудит безопасности).
         return UserResponse.from(userService.create(request, CurrentUserUtil.get().uuid()));
     }
 

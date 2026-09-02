@@ -19,6 +19,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 bash wg
     && apt-get install -y --no-install-recommends powershell \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=build /build/target/admin-panel-backend.jar app.jar
-RUN mkdir -p /app/data
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+
+# Непривилегированный пользователь для запуска java-процесса. Раньше backend работал
+# от root — при том, что это приложение по своей природе выполняет загруженные
+# администратором скрипты как есть (см. ScriptService), запуск от root означал, что
+# любой баг в контроле доступа к загрузке скриптов (см. аудит безопасности) сразу
+# давал атакующему root в контейнере.
+RUN mkdir -p /app/data && chmod +x /app/docker-entrypoint.sh && groupadd -r appuser && useradd -r -g appuser -d /app -s /usr/sbin/nologin appuser
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+# entrypoint стартует от root только на долю секунды, чтобы поправить владельца
+# тома /app/data (см. docker-entrypoint.sh), и сразу передаёт управление java
+# от имени appuser — постоянно root внутри контейнера не работает.
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
