@@ -143,6 +143,22 @@ export default function BulkAccessPanel({ category }) {
       </div>
       {error && <p className="error">{error}</p>}
 
+      {execution && execution.batchBanks && execution.batchBanks.length > 0 && (
+        <div className="batch-summary">
+          <p className="batch-summary-title">
+            Загружено {execution.batchBanks.reduce((sum, b) => sum + b.accountCount, 0)} счёт(ов)
+            по {execution.batchBanks.length} банк(ам) — готово к отправке в систему:
+          </p>
+          <ul>
+            {execution.batchBanks.map((b) => (
+              <li key={b.bank}>
+                <strong>{b.bank}</strong> — {b.accountCount} счёт(ов): {b.accounts.join(', ')}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {execution && (
         <div className={`status-box status-${execution.status.toLowerCase()}`}>
           <p><strong>Статус:</strong> {statusLabel(execution.status)}</p>

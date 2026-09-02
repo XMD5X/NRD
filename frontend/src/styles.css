@@ -131,3 +131,17 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
   font-weight: 500;
 }
 .task-back:hover { color: var(--sibur-dark-teal); text-decoration: underline; }
+
+/* Зелёная сводка "что загружено" при массовом запуске "Все банки" (BulkAccessPanel). */
+.batch-summary {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #e7faf2;
+  color: #146c43;
+  font-size: 14px;
+}
+.batch-summary-title { margin: 0; font-weight: 500; }
+.batch-summary ul { margin: 8px 0 0; padding-left: 20px; }
+.batch-summary li { margin-bottom: 4px; }
+.batch-summary strong { color: var(--sibur-dark-teal); }

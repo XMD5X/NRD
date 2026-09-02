@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ru.support.adminpanel.config.AppProperties;
+import ru.support.adminpanel.dto.BatchBankSummary;
 import ru.support.adminpanel.dto.ExecutionHistoryResponse;
 import ru.support.adminpanel.entity.*;
 import ru.support.adminpanel.repository.ScriptExecutionRepository;
@@ -119,7 +120,12 @@ public class ExecutionService {
      * выполнения — поэтому скачивание (zip нескольких файлов) работает без изменений,
      * см. ExecutionController.download().
      */
-    public ScriptExecution executeBatch(String category, String userId, MultipartFile excelFile, CurrentUser actor) {
+    /** Результат массового запуска: само выполнение + по каким счетам какой банк
+     *  был реально загружен из файла (для зелёной сводки на UI). */
+    public record BatchExecutionResult(ScriptExecution execution, List<BatchBankSummary> banks) {
+    }
+
+    public BatchExecutionResult executeBatch(String category, String userId, MultipartFile excelFile, CurrentUser actor) {
         List<ScriptEntity> categoryScripts = scriptRepository.findByCategoryAndActiveTrue(category);
         if (categoryScripts.isEmpty()) {
             throw new IllegalArgumentException("Для роли \"" + category + "\" не найдено ни одного активного скрипта");
@@ -171,6 +177,7 @@ public class ExecutionService {
         StringBuilder stdoutAgg = new StringBuilder();
         StringBuilder stderrAgg = new StringBuilder();
         List<String> processedBanks = new ArrayList<>();
+        List<BatchBankSummary> banksSummary = new ArrayList<>();
 
         for (Map.Entry<String, List<String>> entry : accountsByBank.entrySet()) {
             ScriptEntity script = scriptsByBank.get(entry.getKey());
@@ -180,6 +187,7 @@ public class ExecutionService {
             ScriptExecutionEngine.Result result = engine.run(script.getScriptType(), script.getFilePath(),
                     ordered, resultsDir);
             processedBanks.add(script.getBankName());
+            banksSummary.add(new BatchBankSummary(script.getBankName(), entry.getValue()));
             stdoutAgg.append("[").append(script.getBankName()).append("]\n")
                     .append(result.stdout == null ? "" : result.stdout).append("\n");
             if (result.exitCode != 0 || result.timedOut) {
@@ -201,7 +209,7 @@ public class ExecutionService {
         ScriptExecution saved = executionRepository.save(execution);
         actionHistoryService.record(actor.uuid(), "SCRIPT_EXECUTE_BATCH", "SCRIPT_EXECUTION", saved.getId(),
                 "Роль: " + category + ", банки: " + String.join(", ", processedBanks) + ", статус: " + saved.getStatus());
-        return saved;
+        return new BatchExecutionResult(saved, banksSummary);
     }
 
     /** Список банков (для шаблона Excel и проверки), для которых есть активный скрипт в роли. */

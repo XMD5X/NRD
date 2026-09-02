@@ -4,6 +4,7 @@ import ru.support.adminpanel.entity.ExecutionStatus;
 import ru.support.adminpanel.entity.ScriptExecution;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public class ExecutionResponse {
@@ -16,11 +17,19 @@ public class ExecutionResponse {
     /** Сколько файлов результата сгенерировано (по одному на каждый введённый счёт).
      *  Если больше одного — скачивание отдаёт zip-архив, см. ExecutionController. */
     private int resultFileCount;
+    /** Только для массового запуска "Все банки" (см. ScriptController.executeBatch) —
+     *  разбивка загруженных из Excel счетов по банкам, для наглядного подтверждения
+     *  на UI, что именно было загружено и готово к отправке. Null для обычных запусков. */
+    private List<BatchBankSummary> batchBanks;
     private OffsetDateTime startedAt;
     private OffsetDateTime finishedAt;
     private OffsetDateTime sentToTargetAt;
 
     public static ExecutionResponse from(ScriptExecution e, int resultFileCount) {
+        return from(e, resultFileCount, null);
+    }
+
+    public static ExecutionResponse from(ScriptExecution e, int resultFileCount, List<BatchBankSummary> batchBanks) {
         ExecutionResponse r = new ExecutionResponse();
         r.id = e.getId();
         r.scriptId = e.getScriptId();
@@ -29,6 +38,7 @@ public class ExecutionResponse {
         r.stderr = e.getStderr();
         r.resultFileCount = resultFileCount;
         r.hasResultFile = resultFileCount > 0;
+        r.batchBanks = batchBanks;
         r.startedAt = e.getStartedAt();
         r.finishedAt = e.getFinishedAt();
         r.sentToTargetAt = e.getSentToTargetAt();
@@ -42,6 +52,7 @@ public class ExecutionResponse {
     public String getStderr() { return stderr; }
     public boolean isHasResultFile() { return hasResultFile; }
     public int getResultFileCount() { return resultFileCount; }
+    public List<BatchBankSummary> getBatchBanks() { return batchBanks; }
     public OffsetDateTime getStartedAt() { return startedAt; }
     public OffsetDateTime getFinishedAt() { return finishedAt; }
     public OffsetDateTime getSentToTargetAt() { return sentToTargetAt; }

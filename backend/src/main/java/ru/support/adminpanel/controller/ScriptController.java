@@ -77,8 +77,9 @@ public class ScriptController {
     public ExecutionResponse executeBatch(@RequestParam String category,
                                            @RequestParam(required = false) String userId,
                                            @RequestParam("file") MultipartFile file) {
-        var execution = executionService.executeBatch(category, userId, file, CurrentUserUtil.get());
-        return ExecutionResponse.from(execution, executionService.listResultFiles(execution).size());
+        var result = executionService.executeBatch(category, userId, file, CurrentUserUtil.get());
+        return ExecutionResponse.from(result.execution(),
+                executionService.listResultFiles(result.execution()).size(), result.banks());
     }
 
     /** Шаблон .xlsx (Счёт/Банк) для загрузки в режиме "Все банки" — со списком банков роли. */
