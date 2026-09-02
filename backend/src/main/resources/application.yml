@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: admin-panel-backend
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/adminpanel}
+    username: ${SPRING_DATASOURCE_USERNAME:adminpanel}
+    password: ${SPRING_DATASOURCE_PASSWORD:adminpanel}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 25MB
+
+server:
+  port: ${SERVER_PORT:8080}
+
+app:
+  scripts-dir: ${APP_SCRIPTS_DIR:./data/scripts}
+  results-dir: ${APP_RESULTS_DIR:./data/results}
+  uploads-dir: ${APP_UPLOADS_DIR:./data/uploads}
+  frontend-logs-dir: ${APP_FRONTEND_LOGS_DIR:./data/logs/frontend}
+  frontend-logs-archive-dir: ${APP_FRONTEND_LOGS_ARCHIVE_DIR:./data/logs/frontend/archive}
+  jwt-secret: ${APP_JWT_SECRET:change-me-in-production-please-use-env-var-adminpanel-secret-key}
+  jwt-expiration-minutes: ${APP_JWT_EXPIRATION_MINUTES:480}
+  frontend-log-retention-days: ${APP_FRONTEND_LOG_RETENTION_DAYS:7}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    root: INFO
+    ru.support.adminpanel: INFO

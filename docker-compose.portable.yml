@@ -1,0 +1,49 @@
+# Портативная версия docker-compose.yml для развёртывания на другом ПК
+# из готовых образов (без сборки из исходников, без интернета).
+# Использование: см. README.md рядом с этим файлом (в папке dist_export).
+name: adminpanel
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: adminpanel
+      POSTGRES_USER: adminpanel
+      POSTGRES_PASSWORD: adminpanel
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Порт наружу не пробрасываем — backend обращается к БД внутри docker-сети.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U adminpanel"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    image: adminpanel-backend:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/adminpanel
+      SPRING_DATASOURCE_USERNAME: adminpanel
+      SPRING_DATASOURCE_PASSWORD: adminpanel
+      APP_JWT_SECRET: local-dev-secret-change-in-production-please-adminpanel
+    volumes:
+      - backend_data:/app/data
+    ports:
+      - "18081:8080"
+
+  web:
+    image: adminpanel-web:latest
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "18080:80"
+
+volumes:
+  pgdata:
+  backend_data:
