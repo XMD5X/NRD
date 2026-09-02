@@ -73,6 +73,7 @@ public class ExecutionService {
         if (!script.isActive()) {
             throw new IllegalStateException("Скрипт деактивирован администратором");
         }
+        validateAccountsField(parameters);
 
         List<String> orderedValues = orderParameters(script.getParametersConfig(), parameters);
 
@@ -211,6 +212,31 @@ public class ExecutionService {
                 .distinct()
                 .sorted()
                 .toList();
+    }
+
+    /**
+     * Номер счёта — ровно {@link BatchExcelService#ACCOUNT_LENGTH} символов (то же
+     * правило, что и для массового запуска по Excel — см. BatchExcelService.parse).
+     * Поле "accounts" есть только у задач "Выдача прав доступа..." — для остальных
+     * скриптов (без такого поля) проверка просто ничего не делает.
+     */
+    private void validateAccountsField(Map<String, String> parameters) {
+        if (parameters == null) return;
+        String accounts = parameters.get("accounts");
+        if (accounts == null || accounts.isBlank()) return;
+        List<String> bad = new ArrayList<>();
+        for (String raw : accounts.split(",")) {
+            String acc = raw.trim();
+            if (acc.isEmpty()) continue;
+            if (acc.length() != BatchExcelService.ACCOUNT_LENGTH) {
+                bad.add("\"" + acc + "\" (" + acc.length() + " симв.)");
+            }
+        }
+        if (!bad.isEmpty()) {
+            throw new IllegalArgumentException("Номер счёта должен содержать ровно "
+                    + BatchExcelService.ACCOUNT_LENGTH + " символов. Проверьте и исправьте: "
+                    + String.join(", ", bad));
+        }
     }
 
     private String normalizeBank(String bank) {

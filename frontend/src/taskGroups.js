@@ -2,7 +2,7 @@
 // (DashboardPage) и страницы конкретной задачи (TaskDetailPage) — чтобы
 // правила группировки не могли разойтись между двумя местами.
 
-export const ACCESS_RIGHTS_ROOT = 'Выдача прав доступа на счета для эталонных ролей'
+export const ACCESS_RIGHTS_ROOT = 'Выдача прав доступа на счета для пользователя'
 
 export const ACCESS_RIGHTS_CATEGORIES = new Set([
   'ГРО (Платежи в рублях)',

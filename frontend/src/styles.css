@@ -78,7 +78,7 @@ button {
 }
 button:hover:not(:disabled) { background: var(--sibur-dark-teal-2); }
 button:disabled { opacity: 0.6; cursor: not-allowed; }
-.error { color: #dc2626; margin-bottom: 12px; }
+.error { color: #dc2626; margin-bottom: 12px; white-space: pre-line; }
 .hint { color: #6b7280; font-size: 13px; }
 .table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; }
 .table th, .table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
