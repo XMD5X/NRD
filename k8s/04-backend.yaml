@@ -76,9 +76,6 @@ spec:
           volumeMounts:
             - name: backend-data
               mountPath: /app/data
-            - name: nginx-logs
-              mountPath: /app/nginx-logs
-              readOnly: true # backend только зипует access-логи nginx, не пишет — как и в docker-compose (nginx_logs:/app/nginx-logs:ro)
           # entrypoint контейнера (docker-entrypoint.sh) сам стартует от root,
           # делает chown /app/data и передаёт управление java от imени appuser —
           # поэтому здесь НЕ выставляем runAsNonRoot/runAsUser: это сломало бы
@@ -108,6 +105,3 @@ spec:
         - name: backend-data
           persistentVolumeClaim:
             claimName: backend-data
-        - name: nginx-logs
-          persistentVolumeClaim:
-            claimName: nginx-logs

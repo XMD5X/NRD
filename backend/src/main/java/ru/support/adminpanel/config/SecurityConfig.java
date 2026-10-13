@@ -1,5 +1,6 @@
 package ru.support.adminpanel.config;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -50,6 +51,13 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/login").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
+                // Файлы фронтенда и маршруты React Router. После отказа от nginx статику
+                // отдаёт сам backend (см. WebConfig), то есть она проходит через эту цепочку —
+                // без явного разрешения страница входа оказалась бы недоступна без входа.
+                // Перечислять маршруты поимённо нельзя: их задаёт роутер во фронтенде и список
+                // меняется вместе с ним. Поэтому правило сформулировано от обратного — любой
+                // GET, который не идёт в API и не в actuator, это запрос страницы или файла.
+                .requestMatchers(SecurityConfig::isFrontendRequest).permitAll()
                 .requestMatchers("/api/users/**").hasRole("ADMIN")
                 // ВАЖНО: requestMatchers("/api/scripts") без указания HTTP-метода закрывает
                 // ВСЕ методы на этом пути — включая POST (загрузка нового скрипта), которая
@@ -75,5 +83,22 @@ public class SecurityConfig {
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
+    }
+
+    /**
+     * Запрос к фронтенду: любой GET вне /api/ и /actuator/. Сами файлы и отдача
+     * index.html для маршрутов роутера — в {@link WebConfig}; здесь только решение
+     * о том, что такой запрос не требует авторизации.
+     */
+    private static boolean isFrontendRequest(HttpServletRequest request) {
+        if (!"GET".equalsIgnoreCase(request.getMethod())) {
+            return false;
+        }
+        String uri = request.getRequestURI();
+        String context = request.getContextPath();
+        String path = (context != null && !context.isEmpty() && uri.startsWith(context))
+                ? uri.substring(context.length())
+                : uri;
+        return !path.startsWith("/api/") && !path.startsWith("/actuator/");
     }
 }

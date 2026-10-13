@@ -5,12 +5,11 @@ import java.util.List;
 
 /**
  * Метрики backend-процесса для карточки "Системные ресурсы" на странице
- * /admin/settings. Намеренно НЕ включает метрики контейнера nginx (frontend) —
- * получить их без доступа к Docker API (docker.sock) невозможно, а пробрасывать
- * его в backend означало бы дать backend'у фактически root-доступ к хосту
- * (см. аудит безопасности) ради строчки "CPU фронтенда" — компромисс того не
- * стоит. Место, занимаемое собранной статикой фронтенда, показывается отдельно,
- * напрямую с nginx (см. nginx/generate-metrics.sh, GET /nginx-metrics.json).
+ * /admin/settings.
+ *
+ * Отдельного контейнера с фронтендом больше нет: после отказа от nginx статику
+ * раздаёт сам backend, поэтому и её размер (staticBytes) считается здесь же —
+ * фронтенду не нужен второй источник метрик.
  */
 public class SystemMetricsResponse {
 
@@ -35,6 +34,9 @@ public class SystemMetricsResponse {
 
     /** Размер БД PostgreSQL (pg_database_size). Null, если запрос не удался. */
     private Long databaseBytes;
+
+    /** Размер собранной статики фронтенда, которую раздаёт backend. */
+    private long staticBytes;
 
     private List<DirUsage> dataDirs;
 
@@ -69,6 +71,9 @@ public class SystemMetricsResponse {
 
     public Long getDatabaseBytes() { return databaseBytes; }
     public void setDatabaseBytes(Long v) { this.databaseBytes = v; }
+
+    public long getStaticBytes() { return staticBytes; }
+    public void setStaticBytes(long v) { this.staticBytes = v; }
 
     public List<DirUsage> getDataDirs() { return dataDirs; }
     public void setDataDirs(List<DirUsage> v) { this.dataDirs = v; }

@@ -2,7 +2,7 @@ apiVersion: v2
 name: nrd-business-panel
 description: >-
   НРД - Бизнес панель. Helm-чарт для полного развёртывания в Kubernetes:
-  postgres (StatefulSet), backend (Deployment), web/nginx (Deployment),
+  postgres (StatefulSet), backend (Deployment, отдаёт и API, и фронтенд),
   Ingress, HPA/PDB/NetworkPolicy. Соответствие исходному docker-compose.yml —
   см. README.md рядом с этим файлом.
 type: application

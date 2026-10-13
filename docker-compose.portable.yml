@@ -34,15 +34,9 @@ services:
     volumes:
       - backend_data:/app/data
     ports:
-      - "18081:8080"
-
-  web:
-    image: adminpanel-web:latest
-    restart: unless-stopped
-    depends_on:
-      - backend
-    ports:
-      - "18080:80"
+      # Веб-панель и API на одном порту: отдельного контейнера с nginx больше нет,
+      # статику фронтенда раздаёт сам backend.
+      - "18080:8080"
 
 volumes:
   pgdata:

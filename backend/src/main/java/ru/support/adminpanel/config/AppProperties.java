@@ -30,10 +30,16 @@ public class AppProperties {
      *  и уровень логирования настраиваются в logback-spring.xml, а не здесь. */
     private String backendLogsDir = "./data/logs/backend";
 
-    /** Каталог с access-логами nginx (том nginx_logs, смонтирован read-only —
-     *  см. docker-compose.yml и nginx/nginx.conf) — только для кнопки
-     *  "Access-логи nginx" в /admin/settings, backend туда ничего не пишет. */
-    private String nginxLogsDir = "./nginx-logs";
+    /** Каталог с собранным фронтендом, который backend раздаёт сам (см. WebConfig).
+     *  В образе сюда Dockerfile копирует frontend/dist-prebuilt. Если каталога нет,
+     *  приложение работает как чистое API — режим локальной разработки, когда
+     *  фронтенд поднят отдельно через `npm run dev`. */
+    private String staticDir = "./static";
+
+    /** Сколько попыток входа с одного адреса допускается в минуту (см.
+     *  LoginRateLimitFilter). Значение по умолчанию повторяет лимит, который
+     *  раньше стоял в nginx. 0 отключает ограничение. */
+    private int loginAttemptsPerMinute = 60;
 
     /** Секрет для подписи JWT. */
     private String jwtSecret = "change-me-in-production-please-use-env-var-adminpanel-secret-key";
@@ -62,8 +68,11 @@ public class AppProperties {
     public String getBackendLogsDir() { return backendLogsDir; }
     public void setBackendLogsDir(String backendLogsDir) { this.backendLogsDir = backendLogsDir; }
 
-    public String getNginxLogsDir() { return nginxLogsDir; }
-    public void setNginxLogsDir(String nginxLogsDir) { this.nginxLogsDir = nginxLogsDir; }
+    public String getStaticDir() { return staticDir; }
+    public void setStaticDir(String staticDir) { this.staticDir = staticDir; }
+
+    public int getLoginAttemptsPerMinute() { return loginAttemptsPerMinute; }
+    public void setLoginAttemptsPerMinute(int loginAttemptsPerMinute) { this.loginAttemptsPerMinute = loginAttemptsPerMinute; }
 
     public String getJwtSecret() { return jwtSecret; }
     public void setJwtSecret(String jwtSecret) { this.jwtSecret = jwtSecret; }

@@ -16,6 +16,7 @@ data:
   APP_FRONTEND_LOGS_DIR: "./data/logs/frontend"
   APP_FRONTEND_LOGS_ARCHIVE_DIR: "./data/logs/frontend/archive"
   APP_BACKEND_LOGS_DIR: "./data/logs/backend"
-  APP_NGINX_LOGS_DIR: "./nginx-logs"
+  APP_STATIC_DIR: "/app/static"
+  APP_LOGIN_ATTEMPTS_PER_MINUTE: "60"
   APP_JWT_EXPIRATION_MINUTES: {{ .Values.app.jwtExpirationMinutes | quote }}
   APP_FRONTEND_LOG_RETENTION_DAYS: {{ .Values.app.frontendLogRetentionDays | quote }}

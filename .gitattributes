@@ -1,1 +1,8 @@
+# PowerShell-скрипты не трогаем: они выгружаются и исполняются на Windows как есть.
 *.ps1 -text
+
+# Shell-скрипты и entrypoint-ы контейнеров ОБЯЗАТЕЛЬНО с LF: при checkout на
+# Windows (особенно с core.autocrlf=true) git иначе положит CRLF, и контейнер
+# упадёт с загадочным "exec /app/docker-entrypoint.sh: no such file or
+# directory" — Linux ищет интерпретатор "/bin/sh\r", которого не существует.
+*.sh text eol=lf

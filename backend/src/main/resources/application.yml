@@ -30,7 +30,10 @@ app:
   frontend-logs-dir: ${APP_FRONTEND_LOGS_DIR:./data/logs/frontend}
   frontend-logs-archive-dir: ${APP_FRONTEND_LOGS_ARCHIVE_DIR:./data/logs/frontend/archive}
   backend-logs-dir: ${APP_BACKEND_LOGS_DIR:./data/logs/backend}
-  nginx-logs-dir: ${APP_NGINX_LOGS_DIR:./nginx-logs}
+  # Каталог с собранным фронтендом, который backend раздаёт сам (nginx больше не
+  # используется). В образе сюда Dockerfile кладёт frontend/dist-prebuilt.
+  static-dir: ${APP_STATIC_DIR:./static}
+  login-attempts-per-minute: ${APP_LOGIN_ATTEMPTS_PER_MINUTE:60}
   jwt-secret: ${APP_JWT_SECRET:change-me-in-production-please-use-env-var-adminpanel-secret-key}
   jwt-expiration-minutes: ${APP_JWT_EXPIRATION_MINUTES:480}
   frontend-log-retention-days: ${APP_FRONTEND_LOG_RETENTION_DAYS:7}

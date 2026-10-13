@@ -34,7 +34,6 @@ export default function AdminSettingsPage() {
   const [saving, setSaving] = useState(false)
 
   const [metrics, setMetrics] = useState(null)
-  const [frontendMetrics, setFrontendMetrics] = useState(null)
   const [metricsError, setMetricsError] = useState(null)
   const [downloadingLog, setDownloadingLog] = useState(null)
 
@@ -70,14 +69,6 @@ export default function AdminSettingsPage() {
       })
       .catch(() => setMetricsError('Не удалось получить метрики backend'))
 
-    // Отдаётся напрямую nginx (не через backend — см. nginx/generate-metrics.sh),
-    // поэтому обычный fetch на тот же origin, а не client (baseURL=/api).
-    // На уже развёрнутом стенде со старым образом frontend файла ещё нет —
-    // это ожидаемо, просто не показываем строку "Фронтенд" в этом случае.
-    fetch('/nginx-metrics.json')
-      .then((res) => (res.ok ? res.json() : null))
-      .then(setFrontendMetrics)
-      .catch(() => setFrontendMetrics(null))
   }
 
   async function downloadLog(path, fallbackName, key) {
@@ -123,11 +114,9 @@ export default function AdminSettingsPage() {
       <div className="card">
         <h2>Системные ресурсы</h2>
         <p className="hint">
-          Нагрузка и место на диске backend-процесса. Метрики CPU/RAM контейнера
-          nginx (frontend) сюда намеренно не включены — их получение потребовало
-          бы доступа backend к Docker API, что после аудита безопасности сочли
-          неоправданным риском; вместо этого ниже показан только размер собранной
-          статики фронтенда (его считает сам nginx при старте).
+          Нагрузка и место на диске backend-процесса. Отдельного контейнера с
+          фронтендом больше нет: статику раздаёт сам backend, поэтому её размер
+          показан здесь же, вместе с остальными каталогами.
         </p>
         {metricsError && <p className="error">{metricsError}</p>}
         {b && (
@@ -166,8 +155,8 @@ export default function AdminSettingsPage() {
               <div className="metric-value">{formatBytes(b.databaseBytes)}</div>
             </div>
             <div className="metric-tile">
-              <div className="hint">Фронтенд (статика nginx)</div>
-              <div className="metric-value">{frontendMetrics ? formatBytes(frontendMetrics.staticBytes) : 'н/д'}</div>
+              <div className="hint">Статика фронтенда</div>
+              <div className="metric-value">{formatBytes(b.staticBytes)}</div>
             </div>
           </div>
         )}
@@ -196,9 +185,9 @@ export default function AdminSettingsPage() {
       <div className="card">
         <h2>Выгрузка логов</h2>
         <p className="hint">
-          Скачивание архивов с файловыми логами backend, фронтенда и
-          access-логами nginx (по дням), а также журнала безопасности
-          (входы + действия пользователей) в формате CEF для передачи в SIEM.
+          Скачивание архивов с файловыми логами backend и фронтенда, а также
+          журнала безопасности (входы + действия пользователей) в формате CEF
+          для передачи в SIEM.
         </p>
         <div className="actions">
           <button disabled={downloadingLog === 'backend'}
@@ -208,10 +197,6 @@ export default function AdminSettingsPage() {
           <button disabled={downloadingLog === 'frontend'}
                   onClick={() => downloadLog('/system/logs/frontend', 'frontend.zip', 'frontend')}>
             {downloadingLog === 'frontend' ? 'Скачиваю…' : 'Логи фронтенда'}
-          </button>
-          <button disabled={downloadingLog === 'nginx'}
-                  onClick={() => downloadLog('/system/logs/nginx-access', 'nginx-access.zip', 'nginx')}>
-            {downloadingLog === 'nginx' ? 'Скачиваю…' : 'Access-логи nginx'}
           </button>
           <button disabled={downloadingLog === 'cef'}
                   onClick={() => downloadLog('/system/logs/security-cef', 'cef.log', 'cef')}>

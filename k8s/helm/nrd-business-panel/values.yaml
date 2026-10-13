@@ -13,10 +13,6 @@ image:
     repository: backend
     tag: latest
     pullPolicy: IfNotPresent
-  frontend:
-    repository: frontend
-    tag: latest
-    pullPolicy: IfNotPresent
 
 postgres:
   image: postgres:16-alpine
@@ -41,30 +37,6 @@ backend:
     enabled: false # включайте только вместе с увеличением replicaCount
     maxUnavailable: 1
 
-web:
-  replicaCount: 1
-  resources:
-    requests: { cpu: 100m, memory: 64Mi }
-    limits: { memory: 256Mi }
-  autoscaling:
-    # Требует настроенного ReadWriteMany storageClassName у nginxLogs ниже —
-    # без него дополнительные поды web не смогут примонтировать том логов на
-    # другом узле. См. README.md, раздел "HPA для web".
-    enabled: false
-    minReplicas: 1
-    maxReplicas: 4
-    targetCPUUtilizationPercentage: 70
-  podDisruptionBudget:
-    enabled: false
-    maxUnavailable: 1
-
-nginxLogs:
-  storage: 5Gi
-  # ОБЯЗАТЕЛЕН ReadWriteMany storage class — впишите имя вашего RWX-класса
-  # (NFS/CephFS/EFS/Azure Files и т.п.). Пусто = StorageClass по умолчанию,
-  # который в большинстве кластеров НЕ поддерживает RWX — PVC не создастся.
-  storageClassName: ""
-
 ingress:
   enabled: true
   className: nginx
@@ -88,11 +60,12 @@ secrets:
 
 networkPolicy:
   enabled: true
-  # Label namespace, где работает ingress-контроллер (обычно у ingress-nginx
-  # это ns "ingress-nginx"). Нужен, чтобы разрешить ingress-контроллеру трафик
-  # до web — без правильного значения NetworkPolicy может заблокировать вход
-  # снаружи. Проверьте: kubectl get ns --show-labels
-  ingressNamespaceLabel: "kubernetes.io/metadata.name=ingress-nginx"
+  # Namespace, где работает ingress-контроллер (у ingress-nginx обычно
+  # "ingress-nginx"). Значение подставляется в NetworkPolicy как метка
+  # kubernetes.io/metadata.name и разрешает контроллеру трафик до backend —
+  # при неверном значении панель окажется недоступна снаружи.
+  # Проверьте: kubectl get ns --show-labels
+  ingressNamespace: "ingress-nginx"
 
 app:
   jwtExpirationMinutes: 480

@@ -1,8 +1,8 @@
 # Helm-чарт НРД - Бизнес панель
 
 Полный перенос стенда из `docker-compose.yml` (см. корень репозитория) в
-Kubernetes: postgres (StatefulSet), backend (Deployment), web/nginx
-(Deployment), Ingress, плюс HPA/PodDisruptionBudget/NetworkPolicy/security-
+Kubernetes: postgres (StatefulSet), backend (Deployment — отдаёт и API, и
+фронтенд), Ingress, плюс PodDisruptionBudget/NetworkPolicy/security-
 контексты, которых не было в первой версии манифестов (`../..` — плоские
 yaml, оставлены как более простой вариант без Helm).
 
@@ -20,7 +20,6 @@ helm install adminpanel . \
   -n nrd-business-panel \
   --set image.registry=<ваш-registry>/nrd-business-panel \
   --set ingress.host=<ваш-домен> \
-  --set nginxLogs.storageClassName=<ваш-RWX-storage-class> \
   --set postgres.storageClassName=<ваш-storage-class>
 ```
 
@@ -54,19 +53,12 @@ backend: вынести online-статус в общее хранилище (Po
 или единый writer). Это отдельная задача уровня приложения — чарт её не
 решает и не должен молча "чинить" сам.
 
-## HPA для web
-
-`web.autoscaling.enabled=false` по умолчанию. Включение требует, чтобы
-`nginxLogs.storageClassName` указывал на реальный ReadWriteMany storage
-class — иначе новые поды `web` на других узлах не смогут примонтировать том
-`nginx-logs`, и HPA будет создавать поды, которые вечно висят в `Pending`.
-
 ## NetworkPolicy
 
 Включены по умолчанию (`networkPolicy.enabled=true`) и разрешают только:
-web ← Ingress-контроллер (namespace по `networkPolicy.ingressNamespaceLabel`,
-проверьте реальный label вашего ingress-namespace через
-`kubectl get ns --show-labels`), backend ← web, postgres ← backend. Если
+backend ← Ingress-контроллер (namespace задаётся в
+`networkPolicy.ingressNamespace`, проверьте реальное имя через
+`kubectl get ns --show-labels`) и postgres ← backend. Если
 после установки внешний доступ не работает — почти наверняка неверно указан
 `ingressNamespaceLabel`.
 
@@ -84,12 +76,9 @@ CI, где значения приходят из защищённых CI/CD-п�
 |---|---|
 | `postgres` | `templates/postgres.yaml` |
 | `backend` | `templates/backend.yaml` |
-| `web` | `templates/web.yaml` |
 | volume `pgdata` | volumeClaimTemplate в StatefulSet postgres |
 | volume `backend_data` | PVC `backend-data` |
-| volume `nginx_certs` | `emptyDir` в поде web |
-| volume `nginx_logs` | PVC `nginx-logs` (ReadWriteMany) |
-| `ports: 18080:80, 443:443` | `templates/ingress.yaml` |
+| `ports: 18080:8080` | `templates/ingress.yaml` |
 | `.env` | Secret `adminpanel-secrets` (заводится вручную, см. выше) |
 
 ## Чего в чарте всё ещё нет

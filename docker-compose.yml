@@ -1,8 +1,11 @@
 # Локальный запуск полного стенда: docker compose up --build
-# Веб-панель будет доступна на http://localhost:18080 и https://localhost (nginx;
-# HTTPS — на самоподписанном сертификате, браузер покажет предупреждение о безопасности,
-# это ожидаемо для локального стенда — см. nginx/generate-cert.sh),
-# backend API напрямую — на http://localhost:18081 (для отладки).
+# Веб-панель будет доступна на http://localhost:18080 — там же, где и API:
+# отдельного контейнера с nginx больше нет, фронтенд и API отдаёт один сервис
+# backend (см. backend/src/main/java/.../config/WebConfig.java).
+#
+# HTTPS на стенде не поднимается: в корпоративном контуре TLS терминируется выше
+# (Ingress/балансировщик), а самоподписанный сертификат на локальном стенде только
+# мешал — браузер каждый раз показывал предупреждение.
 #
 # См. HLD.md раздел 7 "Инфраструктура и деплой" — в продакшене используется
 # Windows Server, здесь Docker Compose применяется только как удобный способ
@@ -38,6 +41,11 @@ services:
     image: adminpanel-backend:latest
     build:
       context: ./backend
+      # Собранный фронтенд подключается отдельным контекстом: образ один (статику
+      # после отказа от nginx раздаёт backend), но кеш слоя с Maven-зависимостями
+      # не инвалидируется при каждой правке фронтенда.
+      additional_contexts:
+        frontend: ./frontend
     restart: unless-stopped
     depends_on:
       postgres:
@@ -53,40 +61,12 @@ services:
       APP_JWT_SECRET: ${APP_JWT_SECRET:?Секрет не задан — запустите deploy.bat, он создаст .env автоматически, либо скопируйте .env.example в .env и заполните APP_JWT_SECRET вручную}
     volumes:
       - backend_data:/app/data
-      # Access-логи nginx — только на чтение: backend их только зипует и
-      # отдаёт по кнопке "Access-логи nginx" (/admin/settings), сам не пишет.
-      - nginx_logs:/app/nginx-logs:ro
     ports:
-      # Только на localhost — этот порт открывает API напрямую (HTTP, без TLS,
-      # в обход nginx) и предназначен исключительно для локальной отладки.
-      # Раньше был "18081:8080" (слушал на всех интерфейсах) — c любой другой
-      # машины в той же сети можно было достучаться до backend в открытом виде.
-      - "127.0.0.1:18081:8080"
-
-  web:
-    image: adminpanel-web:latest
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
-    restart: unless-stopped
-    depends_on:
-      - backend
-    ports:
-      - "18080:80"
-      - "443:443"
-    volumes:
-      # Именованный volume для самоподписанного TLS-сертификата: генерируется один раз
-      # при первом старте контейнера (см. nginx/generate-cert.sh) и переживает пересборки
-      # образа (docker compose up --build), пока volume не удалён явно (docker compose down -v).
-      # Чтобы использовать настоящий корпоративный сертификат вместо самоподписанного —
-      # положите server.crt и server.key в этот volume вместо сгенерированных.
-      - nginx_certs:/etc/nginx/certs
-      # Access-логи nginx (по дням, см. nginx/nginx.conf) — тот же том
-      # смонтирован в backend read-only, см. выше.
-      - nginx_logs:/var/log/nginx
+      # Единственный порт стенда: и веб-панель, и API. Раньше здесь был
+      # "127.0.0.1:18081:8080" — отладочный доступ к API в обход nginx; теперь
+      # обходить нечего, а привычный адрес стенда (18080) сохраняется.
+      - "18080:8080"
 
 volumes:
   pgdata:
   backend_data:
-  nginx_certs:
-  nginx_logs:

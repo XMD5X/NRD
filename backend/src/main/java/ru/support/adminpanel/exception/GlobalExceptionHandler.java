@@ -16,6 +16,18 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    // Запрос к несуществующему пути. Раньше статику отдавал nginx, и такие
+    // запросы просто не доходили до приложения; теперь backend раздаёт и
+    // фронтенд, и API, поэтому неизвестный путь доходит сюда — и без этого
+    // обработчика улетал бы в общий catch-all, то есть клиент получал бы 500
+    // "внутренняя ошибка сервера" вместо честного 404.
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ResponseEntity<Map<String, String>> handleNotFound(
+            org.springframework.web.servlet.resource.NoResourceFoundException ex) {
+        log.debug("Запрос к несуществующему пути: {}", ex.getResourcePath());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Ресурс не найден"));
+    }
+
     // Без этого обработчика ошибки валидации @Valid (например, длина пароля в
     // CreateUserRequest) улетали бы в общий catch-all ниже — то есть отдавались
     // бы клиенту как 500 "внутренняя ошибка сервера" вместо понятного 400 с

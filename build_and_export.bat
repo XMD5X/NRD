@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 chcp 65001 >nul
 echo ============================================
 echo   Admin Panel MVP - сборка и экспорт образов
@@ -14,7 +14,7 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo [1/4] Собираю образы (backend, web)...
+echo [1/4] Собираю образ backend (включает фронтенд)...
 docker compose build
 if %errorlevel% neq 0 (
     echo [ОШИБКА] Сборка не удалась. См. вывод выше.
@@ -30,7 +30,6 @@ echo.
 echo [3/4] Экспортирую образы в папку dist_export...
 if not exist dist_export mkdir dist_export
 docker save -o dist_export\adminpanel-backend.tar adminpanel-backend:latest
-docker save -o dist_export\adminpanel-web.tar adminpanel-web:latest
 docker save -o dist_export\postgres-16-alpine.tar postgres:16-alpine
 
 echo.
@@ -41,7 +40,7 @@ copy README-DEPLOY-OFFLINE.md dist_export\README.md >nul
 echo.
 echo ============================================
 echo Готово. Папка dist_export содержит всё для переноса:
-echo   - adminpanel-backend.tar, adminpanel-web.tar, postgres-16-alpine.tar
+echo   - adminpanel-backend.tar, postgres-16-alpine.tar
 echo   - docker-compose.yml (portable, без сборки из исходников)
 echo   - README.md с инструкцией
 echo.

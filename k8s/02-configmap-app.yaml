@@ -23,6 +23,8 @@ data:
   APP_FRONTEND_LOGS_DIR: "./data/logs/frontend"
   APP_FRONTEND_LOGS_ARCHIVE_DIR: "./data/logs/frontend/archive"
   APP_BACKEND_LOGS_DIR: "./data/logs/backend"
-  APP_NGINX_LOGS_DIR: "./nginx-logs"
+  # Статику фронтенда раздаёт сам backend — каталог внутри образа (см. backend/Dockerfile).
+  APP_STATIC_DIR: "/app/static"
+  APP_LOGIN_ATTEMPTS_PER_MINUTE: "60"
   APP_JWT_EXPIRATION_MINUTES: "480"
   APP_FRONTEND_LOG_RETENTION_DAYS: "7"

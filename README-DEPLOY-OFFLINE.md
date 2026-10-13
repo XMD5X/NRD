@@ -12,8 +12,7 @@
 
 ## Состав
 
-- `adminpanel-backend.tar` — образ backend (Java/Spring Boot)
-- `adminpanel-web.tar` — образ frontend + nginx
+- `adminpanel-backend.tar` — образ backend (Java/Spring Boot) со встроенной статикой фронтенда
 - `postgres-16-alpine.tar` — образ базы данных PostgreSQL
 - `docker-compose.yml` — портативная конфигурация (запускает готовые образы)
 

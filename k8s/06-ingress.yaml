@@ -4,27 +4,20 @@
 #
 # ЗАМЕНИТЕ host на реальный домен панели.
 #
-# Вариант по умолчанию ниже — TLS терминируется на Ingress (нужен реальный
-# сертификат корпоративного CA в Secret adminpanel-tls, например через
-# cert-manager или руками: kubectl create secret tls adminpanel-tls
-# --cert=... --key=... -n nrd-business-panel), а до пода трафик идёт по
-# простому HTTP на порт 80 (backend-protocol по умолчанию — HTTP). Это проще
-# и предсказуемее, чем гонять самоподписанный сертификат из
-# nginx/generate-cert.sh наружу через Ingress.
+# TLS терминируется на Ingress (нужен реальный сертификат корпоративного CA в
+# Secret adminpanel-tls, например через cert-manager или руками:
+# kubectl create secret tls adminpanel-tls --cert=... --key=... -n nrd-business-panel),
+# а до пода трафик идёт простым HTTP на порт 8080.
 #
-# Если вместо этого нужен end-to-end TLS до самого пода (Ingress тоже по
-# HTTPS достукивается до Service :443, где у пода самоподписанный сертификат) —
-# раскомментируйте аннотации backend-protocol/ssl-verify ниже и укажите
-# targetPort: 443 у backend .service.port в правиле.
+# Отдельного пода с nginx больше нет: фронтенд и API отдаёт один сервис backend,
+# поэтому и правило здесь одно — весь трафик на backend:8080.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: adminpanel
   namespace: nrd-business-panel
   annotations:
-    nginx.ingress.kubernetes.io/proxy-body-size: "25m" # см. client_max_body_size 25m в common-locations.conf / spring.servlet.multipart.max-file-size
-    # nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-    # nginx.ingress.kubernetes.io/proxy-ssl-verify: "false" # самоподписанный сертификат пода — verify включать не за чем
+    nginx.ingress.kubernetes.io/proxy-body-size: "25m" # см. spring.servlet.multipart.max-file-size
 spec:
   ingressClassName: nginx
   tls:
@@ -39,6 +32,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: web
+                name: backend
                 port:
-                  number: 80
+                  number: 8080

@@ -84,9 +84,6 @@ spec:
           volumeMounts:
             - name: backend-data
               mountPath: /app/data
-            - name: nginx-logs
-              mountPath: /app/nginx-logs
-              readOnly: true
           readinessProbe:
             httpGet:
               path: /actuator/health
@@ -104,9 +101,6 @@ spec:
         - name: backend-data
           persistentVolumeClaim:
             claimName: backend-data
-        - name: nginx-logs
-          persistentVolumeClaim:
-            claimName: nginx-logs
 ---
 {{- if .Values.backend.podDisruptionBudget.enabled }}
 apiVersion: policy/v1
@@ -122,12 +116,19 @@ spec:
 {{- end }}
 ---
 {{- if .Values.networkPolicy.enabled }}
-# backend принимает трафик только от web (проксирование /api/) и от самого
-# себя (health-пробы kubelet идут напрямую в под, NetworkPolicy их не
-# затрагивает). Исходящий трафик — к postgres и наружу (для скриптов, если
-# они обращаются к внешним API, см. ScriptService/RaiffeisenBankApi в
-# основном репозитории) egress не ограничиваем, чтобы не сломать выполнение
-# скриптов непредсказуемым образом — сузьте под ваши реальные нужды.
+# backend принимает трафик от Ingress-контроллера: отдельного пода web больше
+# нет, backend отдаёт и API, и фронтенд, поэтому внешние запросы приходят прямо
+# сюда. Health-пробы kubelet идут напрямую в под и NetworkPolicy их не
+# затрагивает.
+#
+# Источник указан по пространству имён Ingress-контроллера — ЗАМЕНИТЕ метку на
+# ту, что реально стоит на namespace вашего контроллера (у ingress-nginx это
+# обычно ingress-nginx). Если оставить правило как есть и метка не совпадёт,
+# панель окажется недоступна снаружи.
+#
+# Исходящий трафик (egress) не ограничиваем: скрипты могут обращаться к внешним
+# API, и жёсткое правило сломало бы их выполнение непредсказуемым образом —
+# сузьте под ваши реальные нужды.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -140,9 +141,9 @@ spec:
   policyTypes: ["Ingress"]
   ingress:
     - from:
-        - podSelector:
+        - namespaceSelector:
             matchLabels:
-              app: web
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.ingressNamespace }}
       ports:
         - port: 8080
 {{- end }}

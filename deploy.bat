@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 echo ============================================
@@ -30,7 +30,7 @@ if not exist ".env" (
     echo .env создан. Пароль БД по умолчанию не менялся ^(см. .env.example, если нужно сменить^).
 )
 
-echo Собираю и запускаю контейнеры (backend, frontend/nginx, postgres)...
+echo Собираю и запускаю контейнеры (backend + фронтенд, postgres)...
 docker compose up --build -d
 
 if %errorlevel% neq 0 (
@@ -42,9 +42,7 @@ if %errorlevel% neq 0 (
 
 echo.
 echo Готово. Панель будет доступна через 20-30 секунд (пока backend стартует):
-echo   http://localhost:18080  (обычный доступ)
-echo   https://localhost       (HTTPS, самоподписанный сертификат — браузер спросит
-echo                           подтверждение "продолжить" при первом заходе, это ожидаемо)
+echo   http://localhost:18080  (веб-панель и API на одном порту)
 echo.
 echo Демо-учётки: admin / admin12345 (Администратор), business / business12345 (Бизнес-пользователь)
 echo.

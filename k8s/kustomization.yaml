@@ -6,11 +6,8 @@ namespace: nrd-business-panel
 resources:
   - 00-namespace.yaml
   - 02-configmap-app.yaml
-  - 02-configmap-nginx.yaml
   - 03-postgres.yaml
   - 04-backend.yaml
-  - 05-nginx-logs-pvc.yaml
-  - 05-web.yaml
   - 06-ingress.yaml
   # 01-secret.example.yaml сознательно НЕ включён сюда — секрет создаётся
   # отдельной командой kubectl create secret (см. комментарий в файле),

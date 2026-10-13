@@ -106,7 +106,12 @@ public class SystemMetricsService {
         long frontendLogs = directorySize(props.getFrontendLogsDir()) + directorySize(props.getFrontendLogsArchiveDir());
         dirs.add(new SystemMetricsResponse.DirUsage("Логи фронтенда", props.getFrontendLogsDir(), frontendLogs));
         dirs.add(new SystemMetricsResponse.DirUsage("Логи backend", props.getBackendLogsDir(), directorySize(props.getBackendLogsDir())));
-        dirs.add(new SystemMetricsResponse.DirUsage("Access-логи nginx", props.getNginxLogsDir(), directorySize(props.getNginxLogsDir())));
+        // Статику фронтенда раньше считал сам nginx и отдавал файлом /nginx-metrics.json;
+        // теперь её раздаёт backend, поэтому размер считается здесь, вместе с остальными
+        // каталогами, и отдельный источник метрик больше не нужен.
+        long staticBytes = directorySize(props.getStaticDir());
+        dirs.add(new SystemMetricsResponse.DirUsage("Статика фронтенда", props.getStaticDir(), staticBytes));
+        response.setStaticBytes(staticBytes);
         response.setDataDirs(dirs);
     }
 
