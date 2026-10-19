@@ -1,12 +1,14 @@
 # Многоэтапная сборка backend.
 #
-# Контекст сборки — каталог backend, как и раньше. Собранный фронтенд приходит
-# ОТДЕЛЬНЫМ именованным контекстом `frontend` (см. additional_contexts в
-# docker-compose.yml): после отказа от nginx статику раздаёт сам backend, но
-# менять основной контекст на корень репозитория не стали — иначе при каждой
-# правке фронтенда инвалидируется кеш слоя с Maven-зависимостями, и сборка
-# заново тянет весь репозиторий зависимостей (на медленной сети это десятки
-# минут и регулярные обрывы).
+# Контекст сборки — КОРЕНЬ репозитория (см. docker-compose.yml и .gitlab-ci.yml):
+# после отказа от nginx отдельного образа со статикой нет, собранный фронтенд
+# копируется внутрь этого образа.
+#
+# Именованные контексты сборки (--build-context) здесь сознательно НЕ используются:
+# их понимает только BuildKit, а образы в CI собирает kaniko — он работает с одним
+# контекстом. На кеш слоёв это не влияет: ключ кеша COPY считается по содержимому
+# копируемых файлов, поэтому правка фронтенда не инвалидирует слой с Maven-
+# зависимостями, хотя контекст и общий.
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /build
 # Повторные попытки и увеличенные таймауты: в корпоративной сети обращения к
@@ -14,9 +16,9 @@ WORKDIR /build
 # случайном артефакте ("Could not transfer artifact ... (absent)"). Без retry
 # каждая такая обрыв-ошибка означает полный повтор многоминутной загрузки.
 ARG MVN_NET_OPTS="-Dmaven.wagon.http.retryHandler.count=5 -Dmaven.wagon.rto=180000 -Dmaven.wagon.http.pool=false"
-COPY pom.xml .
+COPY backend/pom.xml .
 RUN mvn -q -B $MVN_NET_OPTS dependency:go-offline
-COPY src ./src
+COPY backend/src ./src
 RUN mvn -q -B $MVN_NET_OPTS clean package -DskipTests
 
 FROM eclipse-temurin:21-jre-jammy
@@ -32,13 +34,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 bash wg
     && apt-get install -y --no-install-recommends powershell \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=build /build/target/admin-panel-backend.jar app.jar
-COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+COPY backend/docker-entrypoint.sh /app/docker-entrypoint.sh
 
 # Собранный фронтенд. Сборку (vite build) по-прежнему делаем вне Docker — на этой
 # машине она стабильно падает внутри контейнера ("SyntaxError: Named export 'build'
 # not found"), поэтому в образ кладётся готовый результат из frontend/dist-prebuilt
 # (пересобирается командой `npm ci && npm run build` в frontend/, см. README).
-COPY --from=frontend dist-prebuilt /app/static
+COPY frontend/dist-prebuilt /app/static
 
 # Непривилегированный пользователь для запуска java-процесса. Раньше backend работал
 # от root — при том, что это приложение по своей природе выполняет загруженные

@@ -1,0 +1,16 @@
+# Контекст сборки backend-образа — корень репозитория (см. docker-compose.yml и
+# .gitlab-ci.yml): в образ нужны backend и собранный фронтенд из
+# frontend/dist-prebuilt. Всё остальное в контекст не отправляем — это и быстрее,
+# и не тащит в слои лишнего.
+.git/
+backend/target/
+backend/data/
+frontend/node_modules/
+frontend/dist/
+frontend/src/
+docs/
+k8s/
+Claude outputs/
+*.log
+*.zip
+*.7z

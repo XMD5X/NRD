@@ -40,12 +40,11 @@ services:
   backend:
     image: adminpanel-backend:latest
     build:
-      context: ./backend
-      # Собранный фронтенд подключается отдельным контекстом: образ один (статику
-      # после отказа от nginx раздаёт backend), но кеш слоя с Maven-зависимостями
-      # не инвалидируется при каждой правке фронтенда.
-      additional_contexts:
-        frontend: ./frontend
+      # Контекст — корень проекта: в образ попадает и backend, и собранный
+      # фронтенд из frontend/dist-prebuilt (см. backend/Dockerfile). Тот же
+      # контекст использует сборка в GitLab CI через kaniko.
+      context: .
+      dockerfile: backend/Dockerfile
     restart: unless-stopped
     depends_on:
       postgres:

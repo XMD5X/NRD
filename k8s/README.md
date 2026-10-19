@@ -29,15 +29,15 @@ Service/PVC; чарт — их надмножество.
 ## Порядок разворачивания
 
 1. **Соберите и запушьте образ** в ваш registry. Образ теперь один: отдельного
-   образа со статикой и nginx больше нет, фронтенд попадает внутрь образа
-   backend отдельным контекстом сборки:
+   образа со статикой и nginx больше нет, фронтенд копируется внутрь образа
+   backend, поэтому контекст сборки — корень репозитория:
 
    ```
    # Статику фронтенда собираем ДО docker build (npm ci && npm run build в
    # frontend/, результат — в frontend/dist-prebuilt): сборка vite внутри
    # контейнера на этой машине стабильно падает, см. README в корне.
-   docker build --build-context frontend=./frontend \
-                -t <registry>/nrd-business-panel/backend:latest ./backend
+   docker build -f backend/Dockerfile \
+                -t <registry>/nrd-business-panel/backend:latest .
    docker push <registry>/nrd-business-panel/backend:latest
    ```
 
@@ -99,8 +99,8 @@ Service/PVC; чарт — их надмножество.
 ## CI/CD
 
 Сборка образов и деплой через `helm upgrade` вынесены в `.gitlab-ci.yml` в
-корне репозитория (job'ы `Build backend image`, `Build frontend image`,
+корне репозитория (job'ы `Build backend image`,
 `Deploy (helm upgrade)`, все — ручной запуск, `when: manual`, в дополнение к
-уже существующему job'у зеркалирования с GitHub). См. комментарии в самом
-файле — там же пояснение, почему сборка образов через kaniko, а не
-Docker-in-Docker.
+уже существующему job'у зеркалирования с GitHub). Полная инструкция по
+подключению к GitLab — переменные CI, порядок запуска job'ов и типовые
+ошибки — в `docs/GITLAB.md`.

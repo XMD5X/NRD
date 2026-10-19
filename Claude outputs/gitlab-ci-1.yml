@@ -39,8 +39,9 @@ variables:
   # что используется в multibank-transit; до самого GitLab прокси не нужен,
   # это внутренний адрес.
   PROXY: http://s001as-c-squid.dev002.local:3128
-  # Куда пушим собранные образы backend/frontend — ЗАМЕНИТЕ, если используете
-  # не repo.dev002.local (тот же registry, что и у образа Mirror-job'а выше).
+  # Куда пушим собранный образ — ЗАМЕНИТЕ, если используете не repo.dev002.local
+  # (тот же registry, что и у образа Mirror-job'а выше). Образ теперь ОДИН:
+  # после отказа от nginx фронтенд копируется внутрь образа backend.
   IMAGE_REGISTRY: repo.dev002.local/nrd-business-panel
   HELM_CHART_PATH: k8s/helm/nrd-business-panel
   HELM_RELEASE_NAME: adminpanel
@@ -120,32 +121,21 @@ variables:
   script:
     - mkdir -p /kaniko/.docker
     - echo "${DOCKER_AUTH_CONFIG}" > /kaniko/.docker/config.json
+    # Контекст — КОРЕНЬ репозитория, а не каталог backend: в образ должен попасть
+    # и backend, и собранный фронтенд из frontend/dist-prebuilt (отдельного образа
+    # со статикой после отказа от nginx нет). Именованные контексты сборки
+    # (--build-context) здесь использовать нельзя — kaniko их не поддерживает,
+    # это возможность BuildKit.
+    #
+    # frontend/dist-prebuilt должен быть уже собран и закоммичен (npm ci &&
+    # npm run build в frontend/, см. build_and_export.bat в корне репозитория) —
+    # сама сборка статики внутри CI не выполняется, см. README про то, почему
+    # vite build в контейнере на этом проекте нестабилен.
     - /kaniko/executor
-      --context "${CI_PROJECT_DIR}/backend"
+      --context "${CI_PROJECT_DIR}"
       --dockerfile "${CI_PROJECT_DIR}/backend/Dockerfile"
       --destination "${IMAGE_REGISTRY}/backend:${CI_COMMIT_SHORT_SHA}"
       --destination "${IMAGE_REGISTRY}/backend:latest"
-  rules:
-    - when: manual
-
-"Build frontend image":
-  stage: build
-  image:
-    name: gcr.io/kaniko-project/executor:v1.23.2-debug
-    entrypoint: [""]
-  script:
-    # frontend/dist-prebuilt должен быть уже собран и закоммичен (npm ci &&
-    # npm run build, см. build_and_export.bat в корне репозитория) — контекст
-    # сборки образа берёт его как есть, сама сборка статики внутри CI не
-    # выполняется (см. комментарий в frontend/Dockerfile про то, почему сборка
-    # именно этого фронтенда внутри контейнера нестабильна).
-    - mkdir -p /kaniko/.docker
-    - echo "${DOCKER_AUTH_CONFIG}" > /kaniko/.docker/config.json
-    - /kaniko/executor
-      --context "${CI_PROJECT_DIR}"
-      --dockerfile "${CI_PROJECT_DIR}/frontend/Dockerfile"
-      --destination "${IMAGE_REGISTRY}/frontend:${CI_COMMIT_SHORT_SHA}"
-      --destination "${IMAGE_REGISTRY}/frontend:latest"
   rules:
     - when: manual
 
@@ -157,7 +147,6 @@ variables:
   image: alpine/helm:3.16.2
   needs:
     - "Build backend image"
-    - "Build frontend image"
   before_script:
     - mkdir -p ~/.kube
     - echo "${KUBE_CONFIG_B64}" | base64 -d > ~/.kube/config
@@ -166,7 +155,6 @@ variables:
       --namespace "${HELM_NAMESPACE}" --create-namespace
       --set image.registry="${IMAGE_REGISTRY}"
       --set image.backend.tag="${CI_COMMIT_SHORT_SHA}"
-      --set image.frontend.tag="${CI_COMMIT_SHORT_SHA}"
     # Секрет adminpanel-secrets (пароль БД, JWT-секрет) сюда намеренно НЕ
     # заводится этим job'ом — см. helm/nrd-business-panel/README.md,
     # раздел "Секреты": он создаётся один раз вручную командой kubectl
