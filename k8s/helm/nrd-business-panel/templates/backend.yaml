@@ -53,14 +53,15 @@ spec:
         - name: backend
           image: "{{ .Values.image.registry }}/{{ .Values.image.backend.repository }}:{{ .Values.image.backend.tag }}"
           imagePullPolicy: {{ .Values.image.backend.pullPolicy }}
-          # НЕ выставляем securityContext.runAsNonRoot здесь: entrypoint
-          # контейнера (docker-entrypoint.sh) стартует от root на долю
-          # секунды, чтобы поправить владельца тома /app/data, и сам передаёт
-          # управление java от имени appuser (su -p). Принудительный non-root
-          # на уровне пода сломает этот механизм. Остальные ограничения —
-          # ниже — безопасны и не конфликтуют с ним.
+          # Образ запускается от непривилегированного пользователя всегда:
+          # числовой UID в USER, каталог данных передан ему на сборке, java
+          # стартует напрямую. Профиль Pod Security Admission "restricted"
+          # выполняется без исключений для namespace.
           securityContext:
             allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: {{ .Values.backend.runAsUser }}
+            runAsGroup: {{ .Values.backend.runAsUser }}
             capabilities:
               drop: ["ALL"]
             seccompProfile:
@@ -97,6 +98,10 @@ spec:
             initialDelaySeconds: 40
             periodSeconds: 15
           resources: {{ toYaml .Values.backend.resources | nindent 12 }}
+      # fsGroup отдаёт подключённый том группе приложения — это заменяет chown,
+      # который раньше делал entrypoint от root.
+      securityContext:
+        fsGroup: {{ .Values.backend.runAsUser }}
       volumes:
         - name: backend-data
           persistentVolumeClaim:
