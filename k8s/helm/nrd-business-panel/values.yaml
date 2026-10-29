@@ -4,7 +4,9 @@
 
 namespace:
   create: true
-  name: nrd-business-panel
+  # Фактический namespace dev-контура. Для test/prod задавайте свой через
+  # --set namespace.name=... или отдельный values-<контур>.yaml.
+  name: nrd-bp
 
 image:
   # ЗАМЕНИТЕ registry на реальный, если отличается от repo.dev002.local.

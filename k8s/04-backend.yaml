@@ -89,15 +89,23 @@ spec:
               drop: ["ALL"]
             seccompProfile:
               type: RuntimeDefault
+          # Проба бьёт в корень, а не в /actuator/health: зависимости
+          # spring-boot-starter-actuator в проекте нет, и такая проба
+          # возвращала 404 — kubelet перезапускал под по кругу. GET / отдаёт
+          # index.html, то есть подтверждает, что приложение приняло запрос и
+          # раздаёт фронтенд. Ограничение осознанное: это проверка «процесс
+          # отвечает по HTTP», а не «приложение исправно» — состояние БД она
+          # не видит. Перед prod стоит добавить actuator и вернуть полноценный
+          # health-endpoint.
           readinessProbe:
             httpGet:
-              path: /actuator/health
+              path: /
               port: 8080
             initialDelaySeconds: 20
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /actuator/health
+              path: /
               port: 8080
             initialDelaySeconds: 40
             periodSeconds: 15
