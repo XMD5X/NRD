@@ -1,0 +1,73 @@
+# NRD GitLab CI template for the first DEV image build.
+# Replace all REPLACE_* placeholders before validating or committing to GitLab.
+# In the existing GitLab configuration, keep the source archive job and its settings.
+# This template uses INSTALL_SCRIPT_RUNTIMES=0 to test image build and publication.
+
+include:
+  - project: 'REPLACE_CI_TEMPLATE_PROJECT'
+    ref: '5.2.1'
+    file: '/full_ci.yml'
+
+  - component: REPLACE_BUILDKIT_COMPONENT
+    inputs:
+      version-strategy: auto
+      release: false
+      project-name: backend
+      registry-dev-repo: REPLACE_DOCKER_DEV_REPO
+      dockerfile-dir: '$CI_PROJECT_DIR/nrd-build'
+      dockerfile-name: Dockerfile
+      stage: build
+      job-name: nrd-image-build-push
+      buildkit-build-args: |
+        INSTALL_SCRIPT_RUNTIMES=0
+
+variables:
+  REGISTRY_DEV_REPO: REPLACE_GENERIC_DEV_REPO
+  PROJECT_NAME: nrd-business-panel
+  ARTIFACT_TYPE: zip
+  DOWNLOAD_URL: https://github.com/XMD5X/NRD/archive/refs/heads/main.zip
+  DOWNLOAD_FILE: main.zip
+  PROXY: REPLACE_DOWNLOAD_PROXY
+  FILE_ARTIFACT_PATH: $DOWNLOAD_FILE
+
+Build:
+  image: REPLACE_DOWNLOAD_JOB_IMAGE
+  stage: build
+  tags:
+    - REPLACE_RUNNER_TAG
+  script:
+    - mkdir -p "$CI_PROJECT_NAME"
+    - curl -f -x "$PROXY" -L -H 'Cache-Control:no-cache' -o "$FILE_ARTIFACT_PATH" "$DOWNLOAD_URL"
+  artifacts:
+    paths:
+      - $FILE_ARTIFACT_PATH
+
+Prepare NRD sources:
+  stage: build
+  image: REPLACE_UNZIP_JOB_IMAGE
+  tags:
+    - REPLACE_RUNNER_TAG
+  needs:
+    - job: Build
+      artifacts: true
+  script:
+    - mkdir nrd-unpacked
+    - unzip -q "$DOWNLOAD_FILE" -d nrd-unpacked
+    - |
+      set -- nrd-unpacked/NRD-*
+      if [ "$#" -ne 1 ] || [ ! -d "$1" ]; then
+        echo "Expected one NRD-* directory in the ZIP artifact"
+        exit 1
+      fi
+      mv "$1" nrd-build
+    - test -f nrd-build/backend/Dockerfile
+    - test -f nrd-build/frontend/dist-prebuilt/index.html
+    - cp nrd-build/backend/Dockerfile nrd-build/Dockerfile
+  artifacts:
+    paths:
+      - nrd-build/
+
+nrd-image-build-push:
+  needs:
+    - job: Prepare NRD sources
+      artifacts: true
