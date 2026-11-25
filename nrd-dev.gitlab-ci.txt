@@ -21,6 +21,12 @@ include:
       buildkit-build-args: |
         INSTALL_SCRIPT_RUNTIMES=0
 
+stages:
+  - build
+  - publishing
+  - release
+  - sonar-check
+
 variables:
   REGISTRY_DEV_REPO: REPLACE_GENERIC_DEV_REPO
   PROJECT_NAME: nrd-business-panel
