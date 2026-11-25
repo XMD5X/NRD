@@ -4,17 +4,25 @@
 # после отказа от nginx отдельного образа со статикой нет, собранный фронтенд
 # копируется внутрь этого образа.
 #
-# Именованные контексты сборки (--build-context) здесь сознательно НЕ используются:
-# их понимает только BuildKit, а образы в CI собирает kaniko — он работает с одним
-# контекстом. На кеш слоёв это не влияет: ключ кеша COPY считается по содержимому
-# копируемых файлов, поэтому правка фронтенда не инвалидирует слой с Maven-
-# зависимостями, хотя контекст и общий.
+# Backend и фронтенд входят в один контекст сборки. Кеш COPY учитывает
+# содержимое скопированных файлов, поэтому изменения фронтенда не сбрасывают
+# кеш Maven-зависимостей.
 # В закрытом контуре CI передаёт полные адреса образов из внутреннего Registry.
 ARG MAVEN_BUILD_IMAGE=maven:3.9-eclipse-temurin-21
 ARG JAVA_RUNTIME_IMAGE=eclipse-temurin:21-jre-jammy
+ARG MAVEN_CA_IMAGE=${MAVEN_BUILD_IMAGE}
+
+FROM ${MAVEN_CA_IMAGE} AS maven-ca
 
 FROM ${MAVEN_BUILD_IMAGE} AS build
 WORKDIR /build
+# Maven проверяет TLS через хранилище Java. Подключаем CA только для сборки.
+ARG MAVEN_CA_CERT_PATH
+RUN --mount=type=bind,from=maven-ca,target=/mnt/maven-ca \
+    if [ -n "$MAVEN_CA_CERT_PATH" ]; then \
+      keytool -importcert -noprompt -cacerts -storepass changeit \
+        -alias nrd-maven-mirror-ca -file "/mnt/maven-ca${MAVEN_CA_CERT_PATH}"; \
+    fi
 # Повторные попытки и увеличенные таймауты: в корпоративной сети обращения к
 # репозиторию зависимостей регулярно обрываются на середине, и сборка падает на
 # случайном артефакте ("Could not transfer artifact ... (absent)"). Без retry
