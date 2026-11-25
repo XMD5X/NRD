@@ -19,6 +19,9 @@ include:
       stage: build
       job-name: nrd-image-build-push
       buildkit-build-args: |
+        MAVEN_BUILD_IMAGE=REPLACE_MAVEN_BUILD_IMAGE
+        JAVA_RUNTIME_IMAGE=REPLACE_JAVA_RUNTIME_IMAGE
+        MAVEN_MIRROR_URL=REPLACE_MAVEN_MIRROR_URL
         INSTALL_SCRIPT_RUNTIMES=0
 
 stages:

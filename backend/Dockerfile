@@ -9,19 +9,32 @@
 # контекстом. На кеш слоёв это не влияет: ключ кеша COPY считается по содержимому
 # копируемых файлов, поэтому правка фронтенда не инвалидирует слой с Maven-
 # зависимостями, хотя контекст и общий.
-FROM maven:3.9-eclipse-temurin-21 AS build
+# В закрытом контуре CI передаёт полные адреса образов из внутреннего Registry.
+ARG MAVEN_BUILD_IMAGE=maven:3.9-eclipse-temurin-21
+ARG JAVA_RUNTIME_IMAGE=eclipse-temurin:21-jre-jammy
+
+FROM ${MAVEN_BUILD_IMAGE} AS build
 WORKDIR /build
 # Повторные попытки и увеличенные таймауты: в корпоративной сети обращения к
 # репозиторию зависимостей регулярно обрываются на середине, и сборка падает на
 # случайном артефакте ("Could not transfer artifact ... (absent)"). Без retry
 # каждая такая обрыв-ошибка означает полный повтор многоминутной загрузки.
 ARG MVN_NET_OPTS="-Dmaven.wagon.http.retryHandler.count=5 -Dmaven.wagon.rto=180000 -Dmaven.wagon.http.pool=false"
+ARG MAVEN_MIRROR_URL
+RUN if [ -n "$MAVEN_MIRROR_URL" ]; then \
+      mkdir -p "$HOME/.m2" && \
+      printf '%s\n' \
+        '<settings><mirrors><mirror>' \
+        '<id>corporate-mirror</id><mirrorOf>*</mirrorOf>' \
+        '<url>${env.MAVEN_MIRROR_URL}</url>' \
+        '</mirror></mirrors></settings>' > "$HOME/.m2/settings.xml"; \
+    fi
 COPY backend/pom.xml .
 RUN mvn -q -B $MVN_NET_OPTS dependency:go-offline
 COPY backend/src ./src
 RUN mvn -q -B $MVN_NET_OPTS clean package -DskipTests
 
-FROM eclipse-temurin:21-jre-jammy
+FROM ${JAVA_RUNTIME_IMAGE}
 WORKDIR /app
 
 # Среды выполнения для загружаемых скриптов: python3 и bash — для демо-скриптов
